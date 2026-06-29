@@ -108,6 +108,8 @@ python tools/generate_slides.py --outline outline_visual.md
 | Non-Visual Transition Logical Flow | Adding logic comments in outline but slide visual remains disjointed | Logic transitions must be **visualized**. Incorporate a consistent **Top Navigation Bar / Flow Indicator** in the prompt (instructing the model to paint it and highlight the active step) and in the text overlay. |
 | Abstract or Vague Chart Prompts | Asking the model to "draw a radar chart of AI sychophancy/quality metrics" | Specify the **exact dimensions** (e.g. five dimensions: "AI腔词汇比率", "空洞无事实比率") and exact numbers/comparison pairs in the prompt. Do not leave abstractions for the image model to invent. |
 | PYTHONPATH Missing for Generator | `generate_slides.py` fails with ModuleNotFoundError: No module named 'tools' | Prepend `PYTHONPATH=.` when running generation scripts from local slide directories to fix Python module paths. |
+| Multi-Image Asset Limit for Generator | passing multiple assets to a slide causing `gpt-image-2 currently supports at most one input image` error | Ensure the `Asset` list contains at most **one** image file. If both a navbar style and a data chart are needed, pass the data chart as the single image `Asset` and describe the navbar styling purely in the text prompt. |
+| Hallucinated Quantitative Chart Details | asking the image model to draw exact numerical charts (bar charts, line graphs) | Always pre-plot quantitative charts using Python + Matplotlib to generate a precise PNG image, use it as the single `Asset`, and guide the image model to replicate its content and layout. |
 
 ## Additional resources
 
