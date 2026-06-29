@@ -33,4 +33,5 @@ def test_script_creates_image_starter(tmp_path: Path):
         check=True,
     )
     assert (out / "deck_plan.md").exists()
-    assert (out / "visual_direction.md").exists()
+    assert (out / "visual_guideline.md").exists()
+

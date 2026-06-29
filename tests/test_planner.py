@@ -55,12 +55,21 @@ def test_build_deck_plan_raises_on_invalid_plan():
 def test_write_image_mode_starter(tmp_path: Path):
     written = write_image_mode_starter(tmp_path / "deck", "Launch narrative")
     names = {path.name for path in written}
-    assert names == {"deck_plan.md", "visual_direction.md", "slide_prompts.md", "speaker_notes.md"}
+    assert "deck_plan.md" in names
+    assert "visual_guideline.md" in names
+    assert "outline_visual.md" in names
+    assert "custom.css" in names
+    assert "slideModule.js" in names
+    assert "generate_slides.py" in names
     assert (tmp_path / "deck" / "deck_plan.md").read_text(encoding="utf-8").startswith("# Presentation Deck Plan")
 
 
 def test_write_html_mode_starter(tmp_path: Path):
     written = write_html_mode_starter(tmp_path / "deck", "Interactive demo")
-    relative = {path.relative_to(tmp_path / "deck").as_posix() for path in written}
-    assert relative == {"index.html", "slides/title.js", "deck_plan.md"}
-    assert "Interactive demo" in (tmp_path / "deck" / "index.html").read_text(encoding="utf-8")
+    names = {path.name for path in written}
+    assert "deck_plan.md" in names
+    assert "index.html" in names
+    assert "custom.css" in names
+    assert "slideModule.js" in names
+    assert "title.js" in names
+

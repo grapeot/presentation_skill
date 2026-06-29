@@ -9,4 +9,6 @@ else
   PYTHON="python3"
 fi
 
+export PYTHONPATH="${REPO_ROOT}/src:${PYTHONPATH:-}"
 "${PYTHON}" -m presentation_skill.cli "$@"
+

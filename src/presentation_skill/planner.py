@@ -84,69 +84,63 @@ def build_deck_plan(topic: str, slides: list[SlideSpec], mode: DeckMode) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
-def write_image_mode_starter(target_dir: Path, topic: str) -> list[Path]:
-    target_dir.mkdir(parents=True, exist_ok=True)
-    files = {
-        "deck_plan.md": f"# Presentation Deck Plan: {topic}\n\nMode: image\n\n## Slide Plan\n\n",
-        "visual_direction.md": "# Visual Direction\n\nDefine lighting, material, color semantics, typography, and what must stay consistent across slides.\n",
-        "slide_prompts.md": "# Slide Prompts\n\nUse one section per slide. Include exact readable text and the visual role of each element.\n",
-        "speaker_notes.md": "# Speaker Notes\n\nWrite notes that can be read aloud and that add context not already visible on the slide.\n",
-    }
+import os
+import shutil
+
+def _copy_template_dir(src: Path, dest: Path):
+    if not src.exists():
+        return
+    dest.mkdir(parents=True, exist_ok=True)
+    for item in src.iterdir():
+        d_item = dest / item.name
+        if item.is_dir():
+            _copy_template_dir(item, d_item)
+        else:
+            shutil.copy2(item, d_item)
+
+
+def _get_all_files(target_dir: Path) -> list[Path]:
     written: list[Path] = []
-    for name, content in files.items():
-        path = target_dir / name
-        path.write_text(content, encoding="utf-8")
-        written.append(path)
+    for root, dirs, files in os.walk(target_dir):
+        for file in files:
+            written.append(Path(root) / file)
     return written
+
+
+def write_image_mode_starter(target_dir: Path, topic: str) -> list[Path]:
+    template_root = Path(__file__).parent / "templates"
+    
+    # 1. Copy common templates
+    _copy_template_dir(template_root / "common", target_dir)
+    
+    # 2. Copy image-specific templates
+    _copy_template_dir(template_root / "image", target_dir)
+    
+    # 3. Create deck_plan
+    deck_plan_path = target_dir / "deck_plan.md"
+    deck_plan_path.write_text(
+        f"# Presentation Deck Plan: {topic}\n\nMode: image\n\n## Slide Plan\n\n",
+        encoding="utf-8"
+    )
+    
+    return _get_all_files(target_dir)
 
 
 def write_html_mode_starter(target_dir: Path, topic: str) -> list[Path]:
-    target_dir.mkdir(parents=True, exist_ok=True)
-    (target_dir / "slides").mkdir(exist_ok=True)
-    files = {
-        "index.html": HTML_INDEX_TEMPLATE.replace("{{TOPIC}}", topic),
-        "slides/title.js": HTML_TITLE_TEMPLATE.replace("{{TOPIC}}", topic),
-        "deck_plan.md": f"# Presentation Deck Plan: {topic}\n\nMode: html\n\n## Slide Plan\n\n",
-    }
-    written: list[Path] = []
-    for name, content in files.items():
-        path = target_dir / name
-        path.write_text(content, encoding="utf-8")
-        written.append(path)
-    return written
+    template_root = Path(__file__).parent / "templates"
+    
+    # 1. Copy common templates
+    _copy_template_dir(template_root / "common", target_dir)
+    
+    # 2. Copy html-specific templates
+    _copy_template_dir(template_root / "html", target_dir)
+    
+    # 3. Create deck_plan
+    deck_plan_path = target_dir / "deck_plan.md"
+    deck_plan_path.write_text(
+        f"# Presentation Deck Plan: {topic}\n\nMode: html\n\n## Slide Plan\n\n",
+        encoding="utf-8"
+    )
+    
+    return _get_all_files(target_dir)
 
-
-HTML_INDEX_TEMPLATE = """<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{{TOPIC}}</title>
-  <style>
-    body { margin: 0; font-family: system-ui, sans-serif; background: #0f172a; color: #f8fafc; }
-    main { width: min(1080px, 92vw); margin: 8vh auto; }
-    section { min-height: 70vh; display: grid; place-items: center; border: 1px solid #334155; border-radius: 24px; padding: 48px; }
-    h1 { font-size: clamp(36px, 7vw, 84px); line-height: 1; }
-  </style>
-</head>
-<body>
-  <main id="deck"></main>
-  <script type="module">
-    import { html } from './slides/title.js';
-    document.getElementById('deck').innerHTML = html;
-  </script>
-</body>
-</html>
-"""
-
-
-HTML_TITLE_TEMPLATE = """export const html = `
-<section>
-  <div>
-    <p>Presentation</p>
-    <h1>{{TOPIC}}</h1>
-    <aside class="notes">Open with the problem this deck helps the audience decide.</aside>
-  </div>
-</section>
-`;
-"""

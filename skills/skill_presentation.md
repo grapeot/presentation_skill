@@ -74,17 +74,24 @@ If generated text is garbled, simplify the visible text, increase typographic em
 
 If the deck starts drifting visually, stop adding per-slide style variations and strengthen the shared visual direction.
 
-## Local Helper
+## Local Helper & Example Starter Pack
 
-This repo includes a small offline starter helper:
+This repository includes an offline starter helper CLI tool that sets up the full presentation runtime and copies high-quality examples to act as starting points:
 
 ```bash
+# Initialize a new presentation project with templates and examples
 presentation-skill "Quarterly product strategy" --mode image --output deck_work
-presentation-skill "Interactive system demo" --request "HTML only, no image generation" --output deck_work
+presentation-skill "Interactive system demo" --request "HTML only" --output deck_work
 ```
 
-The helper only creates starter files. The agent remains responsible for writing the deck, rendering or previewing it, and validating the result.
+### ⚠️ IMPORTANT: Follow the Examples
+When the CLI initializes the directory, it copies functional examples of the selected mode into the target folder:
+- **For Image Mode**: It copies a set of 5 sample high-fidelity slides under `generated_slides/` (`slide_01_0.png` through `slide_05_0.png`) and pre-populates `outline_visual.md`, `visual_guideline.md`, and the generation tooling scripts under `tools/`.
+- **For HTML Mode**: It copies a complete set of slide JS modules under `js/slides/` (`title.js`, `slide1.js` through `slide6.js`) and configures `index.html`.
+
+**AI Agent Instruction**: Before modifying or creating new slides, you **must** read and review these copied example slides/assets to understand the visual structure, layout principles, and code contracts. Build or adapt your new slides directly on top of these examples to guarantee high design quality and execution predictability.
 
 ## Installation Acceptance Criteria
 
 The skill is installed when exactly one root skill from this repo is discoverable by the workspace, `presentation-skill --help` works if the package is installed, offline tests pass if the repo is under active development, and private credentials or local aliases remain outside the public repo.
+

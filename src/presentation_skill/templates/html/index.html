@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SlidePilot</title>
+  
+  <!-- Load required libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+  
+  <!-- Reveal.js styles -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/theme/white.css" id="theme">
+  <link rel="stylesheet" href="css/custom.css">
+  
+  <!-- PDF export styles -->
+  <style media="print">
+    .reveal.print-pdf {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+    .reveal.print-pdf .slides {
+      position: static;
+      width: 100% !important;
+      height: auto !important;
+      display: block;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: visible;
+    }
+    .reveal.print-pdf .slides > section {
+      display: block;
+      page-break-after: always;
+      position: relative;
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 800px;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-sizing: border-box !important;
+      overflow: visible;
+    }
+    .reveal.print-pdf .slides > section.stack {
+      margin: 0 !important;
+      padding: 0 !important;
+      page-break-after: avoid;
+      height: auto !important;
+      min-height: 0 !important;
+    }
+    .reveal.print-pdf .slides > section.present {
+      outline: none;
+      border: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="reveal">
+    <div class="slides">
+      <!-- Title Slide -->
+      <section id="title"></section>
+      
+      <!-- Slide 1 - Simple text content -->
+      <section id="slide1"></section>
+      
+      <!-- Slide 2 - Interactive content -->
+      <section id="slide2"></section>
+      
+      <!-- Slide 3 - Progressive content -->
+      <section id="slide3"></section>
+      
+      <!-- Slide 4 - Chart.js visualization -->
+      <section id="slide4"></section>
+      
+      <!-- Slide 5 - Three.js 3D content -->
+      <section id="slide5"></section>
+      
+      <!-- Slide 6 - Horizontal flowchart -->
+      <section id="slide6"></section>
+    </div>
+  </div>
+
+  <!-- Load Reveal.js -->
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/dist/reveal.js"></script>
+  
+  <!-- Load Reveal.js plugins -->
+  <script src="https://cdn.jsdelivr.net/npm/reveal.js@4.3.1/plugin/notes/notes.js"></script>
+  
+  <!-- Load slide modules and initialize presentation -->
+  <script type="module">
+    import { 
+      loadSlideModule, 
+      renderSlide, 
+      initializeSlide, 
+      cleanupSlide, 
+      preloadAllSlides 
+    } from './js/slideModule.js';
+    
+    // All slide IDs in order
+    const slideIds = ['title', 'slide1', 'slide2', 'slide3', 'slide4', 'slide5', 'slide6'];
+    
+    // Track current slide
+    let currentSlideId = null;
+    
+    // Initialize Reveal.js
+    Reveal.initialize({
+      hash: true,
+      center: true,
+      history: true,
+      minScale: 0.2,
+      maxScale: 2.0,
+      plugins: [ RevealNotes ]
+    });
+    
+    // Preload all slides
+    preloadAllSlides(slideIds).then(() => {
+      console.log('All slides preloaded');
+      
+      // Render all slides
+      slideIds.forEach(id => {
+        const container = document.getElementById(id);
+        if (container) {
+          renderSlide(id, container);
+        }
+      });
+      
+      // Initialize the current slide on load
+      const currentIndex = Reveal.getIndices().h;
+      if (currentIndex >= 0 && currentIndex < slideIds.length) {
+        currentSlideId = slideIds[currentIndex];
+        initializeSlide(currentSlideId);
+      }
+    });
+
+    // Handle slide changes
+    Reveal.addEventListener('slidechanged', function(event) {
+      const indices = Reveal.getIndices();
+      
+      if (indices.h >= 0 && indices.h < slideIds.length) {
+        const newSlideId = slideIds[indices.h];
+        
+        // Clean up previous slide
+        if (currentSlideId && currentSlideId !== newSlideId) {
+          cleanupSlide(currentSlideId);
+        }
+        
+        // Initialize new slide
+        currentSlideId = newSlideId;
+        initializeSlide(currentSlideId);
+      } else {
+        // If not on a content slide, cleanup the last slide
+        if (currentSlideId) {
+          cleanupSlide(currentSlideId);
+          currentSlideId = null;
+        }
+      }
+    });
+  </script>
+</body>
+</html> 
