@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from presentation_skill import DeckMode, SlideSpec, build_deck_plan, choose_mode, validate_deck_plan
-from presentation_skill.planner import write_html_mode_starter, write_image_mode_starter
+from presentation_skill.starter import write_html_mode_starter, write_image_mode_starter
 
 
 def test_choose_mode_defaults_to_image():
@@ -53,14 +53,31 @@ def test_build_deck_plan_raises_on_invalid_plan():
 
 
 def test_write_image_mode_starter(tmp_path: Path):
-    written = write_image_mode_starter(tmp_path / "deck", "Launch narrative")
+    deck = tmp_path / "deck"
+    written = write_image_mode_starter(deck, "Launch narrative")
     names = {path.name for path in written}
-    assert names == {"deck_plan.md", "visual_direction.md", "slide_prompts.md", "speaker_notes.md"}
-    assert (tmp_path / "deck" / "deck_plan.md").read_text(encoding="utf-8").startswith("# Presentation Deck Plan")
+    assert "deck_plan.md" in names
+    assert "README.md" in names
+    assert "visual_guideline.md" in names
+    assert "outline_visual.md" in names
+    assert "custom.css" in names
+    assert "slideModule.js" in names
+    assert "generate_slides.py" in names
+    assert (deck / "deck_plan.md").read_text(encoding="utf-8").startswith("# Presentation Deck Plan")
+    assert (deck / "examples" / "html" / "index.html").exists()
+    assert "Mode: image" in (deck / "deck_plan.md").read_text(encoding="utf-8")
 
 
 def test_write_html_mode_starter(tmp_path: Path):
-    written = write_html_mode_starter(tmp_path / "deck", "Interactive demo")
-    relative = {path.relative_to(tmp_path / "deck").as_posix() for path in written}
-    assert relative == {"index.html", "slides/title.js", "deck_plan.md"}
-    assert "Interactive demo" in (tmp_path / "deck" / "index.html").read_text(encoding="utf-8")
+    deck = tmp_path / "deck"
+    written = write_html_mode_starter(deck, "Interactive demo")
+    names = {path.name for path in written}
+    assert "deck_plan.md" in names
+    assert "README.md" in names
+    assert "index.html" in names
+    assert "custom.css" in names
+    assert "slideModule.js" in names
+    assert "title.js" in names
+    assert (deck / "examples" / "image" / "index.html").exists()
+    assert (deck / "examples" / "image" / "generated_slides" / "slide_01_0.jpg").exists()
+

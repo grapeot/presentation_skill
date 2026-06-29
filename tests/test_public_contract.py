@@ -6,7 +6,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_exactly_one_root_skill():
     skills = sorted((ROOT / "skills").glob("*.md"))
-    assert [skill.name for skill in skills] == ["skill_presentation.md"]
+    assert [skill.name for skill in skills] == ["reference.md", "skill_presentation.md"]
+    assert (ROOT / "skills" / "skill_presentation.md").exists()
 
 
 def test_required_docs_exist():

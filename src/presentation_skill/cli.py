@@ -3,7 +3,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from .planner import choose_mode, write_html_mode_starter, write_image_mode_starter
+from .deck_plan import choose_mode
+from .starter import write_html_mode_starter, write_image_mode_starter
 
 
 def build_parser() -> argparse.ArgumentParser:
