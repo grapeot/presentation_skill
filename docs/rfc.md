@@ -17,11 +17,22 @@ Image-generated decks are the default because they produce coherent visual langu
 
 ## Architecture
 
-- `skills/skill_presentation.md`: root skill and workflow contract.
+- `skills/skill_presentation.md`: root skill with quick-start workflow and agent checklist.
+- `skills/reference.md`: detailed acceptance criteria and scaffold layout (progressive disclosure).
+- `src/presentation_skill/templates/`: `common/`, `bootstrap/`, and `examples/{image,html}/`.
 - `src/presentation_skill/`: offline helper library for mode selection, deck-plan validation, and starter artifact generation.
 - `scripts/presentation-skill`: thin wrapper for the console command.
 - `tests/`: offline contract tests.
 - `docs/`: PRD, RFC, test strategy, working log, and privacy review.
+
+## Scaffold Layout
+
+CLI init copies the **active mode** to the deck root and the **other mode** under `examples/`:
+
+- `--mode image`: root = image deck; `examples/html/` = HTML module reference.
+- `--mode html`: root = HTML deck; `examples/image/` = image-deck reference.
+
+Both modes include `README.md` (from `bootstrap/DECK_README.md`) with preview and generation steps.
 
 ## Integration Plan
 

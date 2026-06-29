@@ -1,97 +1,93 @@
+---
+name: presentation
+description: >-
+  Creates presentation slide decks for AI agents. Defaults to image-generated
+  full-slide visuals (outline_visual.md, visual_guideline.md, Reveal.js viewer).
+  Falls back to HTML/JS module decks when the user requests no image generation,
+  editable HTML, or interactive slides. Use for slide decks, keynotes, teaching
+  decks, speaker notes, or presentation scaffolds.
+---
+
 # Presentation Skill
 
-## When To Use
+## Quick Start
 
-Use this skill when the user asks an AI agent to create, redesign, or iterate on a presentation deck, slide narrative, speaker notes, or deck scaffold.
+```bash
+# From the presentation_skill repo (or after pip install -e .)
+bash scripts/presentation-skill "Quarterly product strategy" --mode image --output deck_work
+bash scripts/presentation-skill "Interactive demo" --request "HTML only" --output deck_work
+```
 
-Default to an image-generated deck: each slide is rendered as a cohesive full-slide visual, with readable text, diagrams, and visual hierarchy generated together. Use HTML module mode only when the user explicitly asks to avoid image generation, needs interactive/live elements, or requires editable HTML/CSS/JavaScript slides.
+Then preview:
 
-This skill is not a general image prompt skill, not a PowerPoint file editing skill, and not a design review checklist. It can call those capabilities if the installing workspace has them, but this skill owns the presentation workflow and deck acceptance criteria.
-
-## Core Outcome
-
-A completed deck directory must contain enough source material for another agent to continue the work without guessing:
-
-- `deck_plan.md`: audience, thesis, narrative sequence, slide list, and mode.
-- `visual_direction.md` for image mode, or `html_system.md` / module notes for HTML mode.
-- Per-slide source: exact on-slide text, visual role, assets, and speaker-note intent.
-- Rendered or previewable output: generated slide images plus a viewer for image mode, or an HTML deck for fallback mode.
-- `speaker_notes.md`: notes that support the slide rather than repeat it.
-- A validation note describing what was checked and what remains unresolved.
+```bash
+cd deck_work
+uv venv .venv && uv pip install --python .venv/bin/python -r requirements.txt
+.venv/bin/python start-server.py --port 8765 --no-browser
+# Open http://localhost:8765
+```
 
 ## Mode Selection
 
-Choose image mode unless the user clearly says otherwise. Phrases such as "no image generation", "HTML only", "editable HTML", "interactive deck", or "do not render images" select HTML mode.
+| Mode | When | Active files at deck root |
+|------|------|---------------------------|
+| **image** (default) | Keynote, executive, teaching, narrative decks | `outline_visual.md`, `visual_guideline.md`, `generated_slides/`, `tools/`, image `index.html` |
+| **html** | User says "no image generation", "HTML only", "editable HTML", "interactive deck" | `index.html`, `js/slides/*.js`, `js/slideModule.js` |
 
-Image mode is best for keynote-style, executive, teaching, and narrative decks where visual unity matters. HTML mode is best for live demos, charts that must update in-browser, source-editable slides, or low-cost drafts when image generation is unavailable.
+Both modes copy a **reference example of the other mode** under `examples/` for cross-learning.
 
-## Image-Generated Deck Contract
+## Agent Workflow Checklist
 
-The agent should produce these artifacts before rendering:
-
-- A deck-level thesis in one sentence.
-- A slide sequence where every slide advances one claim.
-- A visual direction that defines materials, lighting, color semantics, typography, layout rules, and forbidden styles.
-- Per-slide prompts with exact readable text. Do not ask the image model to invent text.
-- Asset references for logos, screenshots, charts, QR codes, or any pixel that must be exact.
-
-Use the installing workspace's image generation tool. If the workspace has `image-generation-skill`, prefer that for rendering and upscaling. Do not copy API keys into prompts or docs. Put generated files under ignored output directories such as `generated_slides/` or `output/`.
-
-Acceptance criteria for image mode:
-
-- Each slide has a single claim that a reader can understand without speaker notes.
-- On-slide text is exact, legible, and not merely decorative.
-- Visuals explain or structure the claim; they do not serve as generic decoration.
-- Style is consistent across the deck because prompts share one visual direction.
-- Asset-dependent slides use real source assets instead of asking the model to hallucinate logos, QR codes, tables, or screenshots.
-- The deck has a preview path and speaker notes.
-
-## HTML Module Fallback Contract
-
-HTML mode creates a local web deck. Keep one logical slide per module or clearly separated section. Each slide module should expose a predictable interface and keep slide-specific state local.
-
-Acceptance criteria for HTML mode:
-
-- The deck opens from a local `index.html` or documented dev server.
-- Each slide has one main claim and enough visual structure to support it.
-- Interactive slides clean up timers, event listeners, charts, WebGL scenes, or other resources when leaving the slide.
-- Speaker notes are present for slides that need spoken context.
-- The deck avoids global state unless a shared controller is documented.
-
-## Deck Quality Rules
-
-Presentation slides are dual-use: they support a live talk and also work as a handout. A reader who did not attend the talk should be able to recover the core argument from the slides alone.
-
-Prefer concrete claims over topic labels. A slide titled "Architecture" is weak unless the visible text says what matters about the architecture. Use diagrams, contrasts, timelines, or examples to reduce cognitive load.
-
-Speaker notes should add context, transitions, examples, and emphasis. They should not simply read the slide back to the audience.
-
-## Failure Handling
-
-If image generation is unavailable, do not silently downgrade the deck. State that rendering is blocked, keep all source artifacts complete, and either ask for credentials/tooling or switch to HTML mode only if that matches the user's constraints.
-
-If generated text is garbled, simplify the visible text, increase typographic emphasis, or render a textless background and overlay exact text in HTML/CSS. Do not accept illegible text as final.
-
-If the deck starts drifting visually, stop adding per-slide style variations and strengthen the shared visual direction.
-
-## Local Helper & Example Starter Pack
-
-This repository includes an offline starter helper CLI tool that sets up the full presentation runtime and copies high-quality examples to act as starting points:
-
-```bash
-# Initialize a new presentation project with templates and examples
-presentation-skill "Quarterly product strategy" --mode image --output deck_work
-presentation-skill "Interactive system demo" --request "HTML only" --output deck_work
+```
+- [ ] Run presentation-skill CLI to scaffold deck_work/
+- [ ] Read deck_work/README.md and deck_plan.md
+- [ ] Read the active-mode reference (root files) AND skim examples/<other-mode>/
+- [ ] Write slide plan: one claim per slide, exact on-slide text
+- [ ] Build content (image: outline + guideline; html: js/slides modules)
+- [ ] Preview with start-server.py and verify navigation
+- [ ] Write speaker_notes.md and a validation note
 ```
 
-### ⚠️ IMPORTANT: Follow the Examples
-When the CLI initializes the directory, it copies functional examples of the selected mode into the target folder:
-- **For Image Mode**: It copies a set of 5 sample high-fidelity slides under `generated_slides/` (`slide_01_0.png` through `slide_05_0.png`) and pre-populates `outline_visual.md`, `visual_guideline.md`, and the generation tooling scripts under `tools/`.
-- **For HTML Mode**: It copies a complete set of slide JS modules under `js/slides/` (`title.js`, `slide1.js` through `slide6.js`) and configures `index.html`.
+## Image Mode (default)
 
-**AI Agent Instruction**: Before modifying or creating new slides, you **must** read and review these copied example slides/assets to understand the visual structure, layout principles, and code contracts. Build or adapt your new slides directly on top of these examples to guarantee high design quality and execution predictability.
+1. Edit `visual_guideline.md` — shared materials, lighting, typography, forbidden styles.
+2. Edit `outline_visual.md` — one `#### Slide N:` block per slide with exact text in prompts.
+3. Put exact assets (logos, QR codes, screenshots) under `imgs/`; reference them in outline Asset sections.
+4. Render: `python tools/generate_slides.py --outline outline_visual.md` (uses workspace image API keys via `.env`).
+5. `index.html` displays slides via Reveal.js `data-background="generated_slides/slide_NN_0.jpg"`.
+6. Speaker notes go in `<aside class="notes">` inside each `<section>`.
 
-## Installation Acceptance Criteria
+**Before editing:** read root `outline_visual.md`, `visual_guideline.md`, and `examples/html/` to know when HTML modules are a better fit.
 
-The skill is installed when exactly one root skill from this repo is discoverable by the workspace, `presentation-skill --help` works if the package is installed, offline tests pass if the repo is under active development, and private credentials or local aliases remain outside the public repo.
+## HTML Module Mode
 
+1. One slide per file under `js/slides/` (see `examples/html/js/slides/title.js`).
+2. Each module exports `render(container)`, `initialize()`, `cleanup()` via the contract in `js/slideModule.js`.
+3. Register IDs in `index.html`: empty `<section id="slideN">` plus the `slideIds` array.
+4. Interactive slides must clean up timers, listeners, charts, and WebGL in `cleanup()`.
+
+**Before editing:** read root `js/slides/` and `examples/image/` to understand the image-generation alternative.
+
+## Core Deliverables
+
+Every completed deck directory must include:
+
+- `deck_plan.md` — audience, thesis, slide list, mode
+- `visual_guideline.md` (image) or module notes (html)
+- Per-slide source with exact on-slide text and visual role
+- Previewable output (`index.html` + assets)
+- `speaker_notes.md`
+- Validation note (what was checked, what remains)
+
+## Quality & Failure Rules
+
+- One claim per slide; concrete text beats topic labels like "Architecture".
+- Do not ask the image model to invent text — specify exact readable copy.
+- Do not silently downgrade to HTML when image generation fails; state the blocker.
+- If generated text is garbled, simplify copy or overlay exact text in HTML/CSS.
+- Prefer the workspace `image-generation-skill` when available.
+
+## Additional Resources
+
+- Acceptance criteria, contracts, and installation notes: [reference.md](reference.md)
+- Example decks ship in every scaffold under root (active mode) and `examples/` (reference mode)

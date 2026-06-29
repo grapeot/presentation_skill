@@ -53,23 +53,31 @@ def test_build_deck_plan_raises_on_invalid_plan():
 
 
 def test_write_image_mode_starter(tmp_path: Path):
-    written = write_image_mode_starter(tmp_path / "deck", "Launch narrative")
+    deck = tmp_path / "deck"
+    written = write_image_mode_starter(deck, "Launch narrative")
     names = {path.name for path in written}
     assert "deck_plan.md" in names
+    assert "README.md" in names
     assert "visual_guideline.md" in names
     assert "outline_visual.md" in names
     assert "custom.css" in names
     assert "slideModule.js" in names
     assert "generate_slides.py" in names
-    assert (tmp_path / "deck" / "deck_plan.md").read_text(encoding="utf-8").startswith("# Presentation Deck Plan")
+    assert (deck / "deck_plan.md").read_text(encoding="utf-8").startswith("# Presentation Deck Plan")
+    assert (deck / "examples" / "html" / "index.html").exists()
+    assert "Mode: image" in (deck / "deck_plan.md").read_text(encoding="utf-8")
 
 
 def test_write_html_mode_starter(tmp_path: Path):
-    written = write_html_mode_starter(tmp_path / "deck", "Interactive demo")
+    deck = tmp_path / "deck"
+    written = write_html_mode_starter(deck, "Interactive demo")
     names = {path.name for path in written}
     assert "deck_plan.md" in names
+    assert "README.md" in names
     assert "index.html" in names
     assert "custom.css" in names
     assert "slideModule.js" in names
     assert "title.js" in names
+    assert (deck / "examples" / "image" / "index.html").exists()
+    assert (deck / "examples" / "image" / "generated_slides" / "slide_01_0.jpg").exists()
 
