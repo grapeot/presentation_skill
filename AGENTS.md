@@ -24,9 +24,14 @@ The default test suite must stay offline. Do not add live image-generation tests
 
 ## Code Boundaries
 
-`src/presentation_skill/` contains only offline planning, validation, and starter artifact helpers. It must not call external image APIs directly. Image generation belongs to the installing workspace, commonly through an image-generation skill or another user-configured tool.
+`src/presentation_skill/` contains only offline helpers:
 
-`skills/skill_presentation.md` is the only root skill exposed by this repo. Do not expose multiple global skill files from this repository.
+- `starter.py` — CLI template copy and scaffold generation
+- `deck_plan.py` — mode selection and deck-plan validation contract (testable spec, not an AI planner)
+
+It must not call external image APIs directly. Image generation belongs to the installing workspace, commonly through an image-generation skill or another user-configured tool.
+
+`skills/skill_presentation.md` is the only root skill exposed by this repo. `skills/reference.md` is progressive-disclosure support, not a second root skill.
 
 ## Public Safety
 

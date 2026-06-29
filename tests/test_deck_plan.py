@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from presentation_skill import DeckMode, SlideSpec, build_deck_plan, choose_mode, validate_deck_plan
-from presentation_skill.planner import write_html_mode_starter, write_image_mode_starter
+from presentation_skill.starter import write_html_mode_starter, write_image_mode_starter
 
 
 def test_choose_mode_defaults_to_image():

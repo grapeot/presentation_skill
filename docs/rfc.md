@@ -7,37 +7,78 @@ Two older repositories cover related presentation workflows:
 - `nbp_slides`: image-generated full-slide deck workflow with generators and a style library.
 - `cursor_slides`: HTML/JavaScript module deck scaffold optimized for Cursor-era agent workflows.
 
-They share the same product space: helping agents create presentation decks. The new public skill keeps the reusable workflow contract and drops large or legacy artifacts.
+The new public skill keeps the reusable workflow contract and drops large or legacy artifacts.
 
 ## Decision
 
-Create `presentation_skill` as a pure public skill repo with one root skill. The repo includes only offline helpers, docs, tests, and starter templates. It does not vendor the old PDF, generated examples, or visual style catalog.
-
-Image-generated decks are the default because they produce coherent visual language with less manual layout work. HTML module decks remain a fallback for explicit no-image-generation requests, live demos, and editable web decks.
+Create `presentation_skill` as a pure public skill repo with one root skill, offline helpers, docs, tests, and starter templates. Image-generated decks are default; HTML module decks are fallback.
 
 ## Architecture
 
-- `skills/skill_presentation.md`: root skill with quick-start workflow and agent checklist.
-- `skills/reference.md`: detailed acceptance criteria and scaffold layout (progressive disclosure).
-- `src/presentation_skill/templates/`: `common/`, `bootstrap/`, and `examples/{image,html}/`.
-- `src/presentation_skill/`: offline helper library for mode selection, deck-plan validation, and starter artifact generation.
-- `scripts/presentation-skill`: thin wrapper for the console command.
-- `tests/`: offline contract tests.
-- `docs/`: PRD, RFC, test strategy, working log, and privacy review.
+```
+presentation_skill/
+├── skills/
+│   ├── skill_presentation.md   # root skill (quick-start + checklist)
+│   └── reference.md            # detailed contracts (progressive disclosure)
+├── docs/                       # prd, rfc, working, test
+├── src/presentation_skill/
+│   ├── deck_plan.py            # mode selection + deck-plan validation contract
+│   ├── starter.py              # CLI template copy / scaffold generation
+│   ├── cli.py
+│   └── templates/
+│       ├── common/             # start-server.py, slideModule.js, css
+│       ├── bootstrap/          # DECK_README.md → copied as deck README.md
+│       └── examples/
+│           ├── image/          # full image-deck reference
+│           └── html/           # full HTML module reference
+├── scripts/presentation-skill
+└── tests/
+```
 
 ## Scaffold Layout
 
 CLI init copies the **active mode** to the deck root and the **other mode** under `examples/`:
 
-- `--mode image`: root = image deck; `examples/html/` = HTML module reference.
-- `--mode html`: root = HTML deck; `examples/image/` = image-deck reference.
+| CLI flag | Deck root | Cross-reference |
+|----------|-----------|-----------------|
+| `--mode image` | image deck (`outline_visual.md`, `generated_slides/`, image `index.html`) | `examples/html/` |
+| `--mode html` | HTML deck (`js/slides/`, module `index.html`) | `examples/image/` |
 
 Both modes include `README.md` (from `bootstrap/DECK_README.md`) with preview and generation steps.
 
+## Python helpers: what they are and why
+
+The repo name `planner.py` (removed in favor of two modules) confused earlier reviewers. The Python code is **not** an AI planner. It is two small offline utilities:
+
+### `starter.py` — essential
+
+Used by the CLI. Copies template directories, writes stub `deck_plan.md`, copies bootstrap `README.md`. This is the mechanical scaffold agents need on day one.
+
+### `deck_plan.py` — contract library, not runtime planner
+
+Contains:
+
+- `choose_mode()` — maps user request text to `image` vs `html` for `--mode auto`
+- `SlideSpec`, `validate_deck_plan()`, `build_deck_plan()` — encode the skill's deck-plan quality rules as testable Python
+
+**Important:** the agent still writes `deck_plan.md` by hand (or via LLM). The Python functions do not call any model. They exist so:
+
+1. Tests lock the contract ("one claim per slide", sequential numbering, minimum field length).
+2. Future CLI flags (e.g. `--validate-deck-plan deck_plan.md`) can reuse the same logic without duplicating rules in Markdown.
+
+If we never wire CLI validation, `deck_plan.py` still earns its keep as the executable spec behind the skill's acceptance criteria. Removing it would leave only prose with no machine-checkable contract.
+
+### What we deliberately do not build
+
+- No slide content generation in Python
+- No image API calls
+- No automatic outline → image pipeline (that lives in copied `tools/generate_slides.py` inside each deck scaffold, using workspace credentials)
+
 ## Integration Plan
 
-- Install locally under `adhoc_jobs/presentation_skill` and expose one pointer in the workspace skill index.
-- Add the public repo to `context-infrastructure/docs/SKILL_ECOSYSTEM.md`.
-- Remove the older built-in `workflow_presentation_slides.md` from public `context-infrastructure` to avoid duplicated guidance.
-- Add `presentation_skill` to the public `skills` registry.
-- Mark `nbp_slides` and `cursor_slides` as deprecated with README PRs that point to this repo.
+- Install locally under `adhoc_jobs/presentation_skill`; workspace pointer at `rules/skills/presentation_skill.md`.
+- Add to public `skills` registry and deprecate `nbp_slides` / `cursor_slides` with README pointers.
+
+## Migration Notes
+
+Legacy repos may be referenced for historical examples. This repo vendors a trimmed example set under `templates/examples/` only.
