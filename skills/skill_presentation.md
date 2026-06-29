@@ -103,6 +103,11 @@ python tools/generate_slides.py --outline outline_visual.md
 | Mixing paradigms on one slide | Editing JS modules for a slide that should be a rendered JPG (or vice versa) | Pick one mode per slide; use html mode only for slides that need live interaction. |
 | Skipping examples | New slides drift from the scaffold contract | Read root scaffold + `examples/` before writing; adapt from those patterns. |
 | Preview without server | Opening `index.html` as `file://` breaks modules/CDN | Use `start-server.py`; pick a free port if defaults are taken. |
+| English/Mixed Prompts in Chinese Decks | Mixing English and Chinese in MJ/DALL-E prompts for Chinese slides | Use **100% pure Chinese prompts** (excluding standard CLI parameters like `--ar 16:9`). Any English keywords (e.g. "vs", "chart", "mockup") trigger the image model to draw garbled, meaningless English glyphs on the slide background. |
+| Bracketed English Translations | "中文 (英文)" or "中文（英文）" bracketed pairs in text overlay or notes | **Never** use bracketed translations (e.g. "事实包 (Information Pack)"). They serve no purpose for Chinese audiences and dramatically increase visual noise. |
+| Non-Visual Transition Logical Flow | Adding logic comments in outline but slide visual remains disjointed | Logic transitions must be **visualized**. Incorporate a consistent **Top Navigation Bar / Flow Indicator** in the prompt (instructing the model to paint it and highlight the active step) and in the text overlay. |
+| Abstract or Vague Chart Prompts | Asking the model to "draw a radar chart of AI sychophancy/quality metrics" | Specify the **exact dimensions** (e.g. five dimensions: "AI腔词汇比率", "空洞无事实比率") and exact numbers/comparison pairs in the prompt. Do not leave abstractions for the image model to invent. |
+| PYTHONPATH Missing for Generator | `generate_slides.py` fails with ModuleNotFoundError: No module named 'tools' | Prepend `PYTHONPATH=.` when running generation scripts from local slide directories to fix Python module paths. |
 
 ## Additional resources
 
