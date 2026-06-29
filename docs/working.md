@@ -2,6 +2,11 @@
 
 ## Changelog
 
+### 2026-06-29 (later)
+
+- Rewrote `skills/skill_presentation.md` per `skill_creator_skill.md`: result-oriented acceptance criteria, known traps from real misroutes, removed SOP checklist.
+- Verified `.venv/bin/python -m pytest -v` — 16 tests passed.
+
 ### 2026-06-29
 
 - Restructured templates: `examples/{image,html}/` + `bootstrap/DECK_README.md`; CLI copies active mode to root and other mode under `examples/`.

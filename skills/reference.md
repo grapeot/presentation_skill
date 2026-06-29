@@ -104,3 +104,5 @@ The skill is installed when:
 | Image generation unavailable | State blocker; keep source artifacts complete; ask for credentials or switch to HTML only if user allows |
 | Garbled generated text | Simplify visible text, increase typographic emphasis, or textless background + HTML/CSS overlay |
 | Visual drift across slides | Stop per-slide style variations; strengthen shared visual direction |
+
+See also **Known traps** in `skill_presentation.md` for install-path confusion, silent mode downgrade, and paradigm mixing.
