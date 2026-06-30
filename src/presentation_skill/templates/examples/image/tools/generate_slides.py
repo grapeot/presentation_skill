@@ -38,14 +38,14 @@ def parse_slides(outline_path, start_slide=1, end_slide=19, specific_slides=None
         slide_content = match.group(0).strip()
 
         asset_paths = []
-        asset_header_match = re.search(r'\*\s+\*\*Asset\*\*?\s*:?', slide_content)
+        asset_header_match = re.search(r'\*\s+\*\*Asset\*\*?\s*[:：]?', slide_content)
 
         if asset_header_match:
             rest_of_section = slide_content[asset_header_match.end():]
             lines = rest_of_section.split('\n')
 
             current_line = lines[0].strip()
-            if current_line and current_line.lower() != "none":
+            if current_line and current_line.lower() != "none" and current_line != "无":
                 asset_paths.append(current_line)
 
             for line in lines[1:]:
@@ -56,7 +56,7 @@ def parse_slides(outline_path, start_slide=1, end_slide=19, specific_slides=None
                     break
                 if stripped.startswith('* ') or stripped.startswith('- '):
                     val = stripped[2:].strip()
-                    if val.lower() != "none":
+                    if val.lower() != "none" and val != "无":
                         asset_paths.append(val)
 
         # Strip the `#### Slide N: TITLE` header line before passing content to
@@ -119,6 +119,31 @@ def generate_slide(slide, guideline, output_dir, project_root, *,
     print(f"Starting generation for Slide {slide['number']} (model={model}, size={image_size}, quality={quality})...")
 
     prompt, image_inputs = build_prompt(slide, guideline, project_root)
+    
+    # Handle multiple input images by stacking them vertically
+    if len(image_inputs) > 1:
+        print(f"  Warning: Model {model} only supports at most one input image. Stacking {len(image_inputs)} images...")
+        try:
+            from PIL import Image
+            images = [Image.open(p) for p in image_inputs]
+            max_width = max(img.width for img in images)
+            total_height = sum(img.height for img in images)
+            
+            # White background
+            stacked_img = Image.new('RGB', (max_width, total_height), (255, 255, 255))
+            current_y = 0
+            for img in images:
+                x_offset = (max_width - img.width) // 2
+                stacked_img.paste(img, (x_offset, current_y))
+                current_y += img.height
+                
+            stacked_path = os.path.join(str(output_dir), f"stacked_assets_slide_{slide['number']}.png")
+            stacked_img.save(stacked_path)
+            print(f"  Stacked input assets saved to: {stacked_path}")
+            image_inputs = [stacked_path]
+        except Exception as e:
+            print(f"  Error stacking images for Slide {slide['number']}: {e}")
+
     for asset in image_inputs:
         print(f"  Using asset: {asset}")
 
@@ -179,6 +204,8 @@ def build_parser() -> argparse.ArgumentParser:
                              '(e.g. "_gpt_low" → slide_03_gpt_low_0.jpg)')
     parser.add_argument("--parallelism", type=int,
                         help="Max concurrent workers (default: 4 for gemini, 8 for gpt)")
+    parser.add_argument("--output-dir", default="generated_slides",
+                        help="Output directory under slides/ (default: generated_slides)")
     return parser
 
 
@@ -191,7 +218,7 @@ def main():
 
     outline_path = project_root / "outline_visual.md"
     guideline_path = project_root / "visual_guideline.md"
-    output_dir = project_root / "generated_slides"
+    output_dir = project_root / args.output_dir
 
     os.makedirs(output_dir, exist_ok=True)
 
