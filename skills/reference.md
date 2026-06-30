@@ -20,6 +20,29 @@ Produce before rendering:
 
 Put generated files under `generated_slides/` or `output/`. Do not copy API keys into prompts or docs.
 
+### Multiple reference assets with gpt-image-2
+
+OpenAI `gpt-image-2` accepts **at most one** input image per call. Slides often need more than one exact pixel reference — e.g. a navbar style sheet, a logo, and a QR code on the same closing slide.
+
+**Generator behavior:** When an outline slide lists multiple paths under `Asset`, `tools/generate_slides.py` vertically stacks them (Pillow, white background, top-to-bottom in list order) into `stacked_assets_slide_N.png` under the output directory, then sends that composite as the sole reference image.
+
+**Outline + prompt contract:**
+
+1. List every required asset under `Asset`, in the order they should appear in the stack (first = top).
+2. In the slide **提示词**, explicitly map stack regions to slide placement — e.g. 「参考叠加 Asset 自上而下依次为：导航条样式、Logo、二维码；导航条贴顶左对齐，Logo 居中于标题区上方，二维码嵌入右侧卡片」.
+3. Do not omit navbar reference assets just to stay under one file; stacking preserves format fidelity without sacrificing logo/QR accuracy.
+
+**Draft vs final renders:** Use `--output-dir generated_slides_4k` (or similar) for final-quality batches; point `index.html` `data-background` at the chosen directory.
+
+**Example Asset block (closing slide):**
+
+```
+*   **Asset**：
+    - data/navbar_flow2_ref.png
+    - data/superlinear_logo.png
+    - data/superlinear_qr.png
+```
+
 ### Acceptance criteria
 
 - Each slide has a single claim understandable without speaker notes

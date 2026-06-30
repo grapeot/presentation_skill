@@ -75,8 +75,12 @@ uv venv .venv && uv pip install --python .venv/bin/python -r requirements.txt
 **Image rendering** (inside scaffolded deck, uses workspace credentials via `.env`)
 
 ```bash
-python tools/generate_slides.py --outline outline_visual.md
+PYTHONPATH=. python tools/generate_slides.py --outline outline_visual.md
+# Draft batch (default): generated_slides/
+# Final batch: --size 4K --quality high --output-dir generated_slides_4k
 ```
+
+When a slide needs navbar + logo + chart (or QR), list all assets in `outline_visual.md`; the generator stacks them for gpt-image-2 and you describe top-to-bottom mapping in the prompt.
 
 **Mode → root artifacts**
 
@@ -108,7 +112,7 @@ python tools/generate_slides.py --outline outline_visual.md
 | Non-Visual Transition Logical Flow | Adding logic comments in outline but slide visual remains disjointed | Logic transitions must be **visualized**. Incorporate a consistent **Top Navigation Bar / Flow Indicator** in the prompt (instructing the model to paint it and highlight the active step) and in the text overlay. |
 | Abstract or Vague Chart Prompts | Asking the model to "draw a radar chart of AI sychophancy/quality metrics" | Specify the **exact dimensions** (e.g. five dimensions: "AI腔词汇比率", "空洞无事实比率") and exact numbers/comparison pairs in the prompt. Do not leave abstractions for the image model to invent. |
 | PYTHONPATH Missing for Generator | `generate_slides.py` fails with ModuleNotFoundError: No module named 'tools' | Prepend `PYTHONPATH=.` when running generation scripts from local slide directories to fix Python module paths. |
-| Multi-Image Asset Limit for Generator | passing multiple assets to a slide causing `gpt-image-2 currently supports at most one input image` error | Ensure the `Asset` list contains at most **one** image file. If both a navbar style and a data chart are needed, pass the data chart as the single image `Asset` and describe the navbar styling purely in the text prompt. |
+| Multi-image asset limit (gpt-image-2) | Listing navbar + logo + QR (or chart + style ref) under `Asset` triggers `gpt-image-2 currently supports at most one input image` | **Do not drop assets.** Keep every needed pixel reference in the outline `Asset` list. `tools/generate_slides.py` auto-stacks multiple assets vertically with Pillow into `generated_slides/stacked_assets_slide_N.png` and passes that single composite to the model. **Prompt must name the stack order** — e.g. 「参考叠加 Asset 自上而下依次为：导航条样式、Logo、二维码」 — so the model maps each region correctly. Asset order in the outline = top-to-bottom stack order. |
 | Hallucinated Quantitative Chart Details | asking the image model to draw exact numerical charts (bar charts, line graphs) | Always pre-plot quantitative charts using Python + Matplotlib to generate a precise PNG image, use it as the single `Asset`, and guide the image model to replicate its content and layout. |
 
 ## Additional resources
