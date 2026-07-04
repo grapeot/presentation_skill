@@ -95,6 +95,7 @@ When a slide needs navbar + logo + chart (or QR), list all assets in `outline_vi
 - Image decks: unify style through `visual_guideline.md` + shared style reference assets; render only after outline text is locked.
 - HTML decks: keep slide state local; treat `examples/html/js/slides/title.js` as the module contract reference.
 - Prefer the workspace image-generation skill when available.
+- Image decks that show URLs/QRs or embed live artifacts: add a clickable HTML overlay layer per [docs/clickable_overlays.md](../docs/clickable_overlays.md) — prompt the zone, measure the rendered element's bbox by vision, inject padded `<a>`/iframe hotzones, verify with a draw-back check.
 
 ## Known traps
 
@@ -114,7 +115,9 @@ When a slide needs navbar + logo + chart (or QR), list all assets in `outline_vi
 | PYTHONPATH Missing for Generator | `generate_slides.py` fails with ModuleNotFoundError: No module named 'tools' | Prepend `PYTHONPATH=.` when running generation scripts from local slide directories to fix Python module paths. |
 | Multi-image asset limit (gpt-image-2) | Listing navbar + logo + QR (or chart + style ref) under `Asset` triggers `gpt-image-2 currently supports at most one input image` | **Do not drop assets.** Keep every needed pixel reference in the outline `Asset` list. `tools/generate_slides.py` auto-stacks multiple assets vertically with Pillow into `generated_slides/stacked_assets_slide_N.png` and passes that single composite to the model. **Prompt must name the stack order** — e.g. 「参考叠加 Asset 自上而下依次为：导航条样式、Logo、二维码」 — so the model maps each region correctly. Asset order in the outline = top-to-bottom stack order. |
 | Hallucinated Quantitative Chart Details | asking the image model to draw exact numerical charts (bar charts, line graphs) | Always pre-plot quantitative charts using Python + Matplotlib to generate a precise PNG image, use it as the single `Asset`, and guide the image model to replicate its content and layout. |
+| Painted links that don't click | A URL pill or QR caption rendered into the slide image; audience receives the HTML deck and nothing is clickable, or overlay coords copied from the prompt miss the element by ~5% | Add an overlay layer per [docs/clickable_overlays.md](../docs/clickable_overlays.md): coordinates come from post-generation vision measurement (not from the prompt), hotzones get 1.5% padding, and each overlay is verified with a Pillow draw-back check. |
 
 ## Additional resources
 
 - Detailed contracts, scaffold layout, installation: [reference.md](reference.md)
+- Clickable links / live-artifact embeds on image slides: [docs/clickable_overlays.md](../docs/clickable_overlays.md)
