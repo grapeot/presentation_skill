@@ -118,7 +118,7 @@ Notes:
 
 ## Workflow for the agent
 
-1. In `outline_visual.md`, describe link affordances with a zone, not coordinates ("light-blue pill, horizontally centered, vertical center around 88% height, exact text '...'"). Exact on-slide text in the prompt, as always.
+1. In `outline_visual.md`, describe link affordances with a zone, not coordinates ("light-blue pill, horizontally centered, vertical center around 88% height, exact text '...'"). The exact on-slide text must equal the href's visible form (including any `.html`) — this is what a printed PDF uses as the link target.
 2. After rendering, Read each affected slide image and record the painted element's normalized bbox into `overlays.json`.
 3. Verify: draw each rect onto a copy of the image with Pillow, Read the copy, confirm the box hugs the element. Re-measure any miss (one pass sufficed in testing).
 4. Inject the snippet, serve the deck, and confirm each overlay opens the right target (Playwright click or manual spot-check).
@@ -126,8 +126,25 @@ Notes:
 
 ## Export caveats
 
-- The distributed HTML deck keeps all overlays working — prefer it as the take-home format.
-- PDF export drops the overlay layer. If a PDF is required, add a final "All links" appendix slide (plain text URLs / QR) so nothing is lost.
+Two distribution formats, two different behaviors — pick deliberately:
+
+**HTML deck (`?print-pdf` off)** — all overlays clickable. Prefer this as the take-home format when links matter.
+
+**Browser `?print-pdf` → Save as PDF** — Reveal *does* carry the overlay `<a>` elements into the PDF, so links survive. But this is where a subtle bug bites: **the printed PDF turns the overlay's visible text into the link, not its `href`.** If the painted pill reads `example.com/page` but the `href` is `example.com/page.html`, the browser prints a link pointing at `example.com/page` — a 404. The `href` is correct in the live deck (clicking works there); only the print step rewrites it from the visible text.
+
+  - **Fix**: make the overlay's visible text (both the painted pill text in `outline_visual.md` and the `label` in `overlays.json`) **character-for-character equal to the `href`'s user-visible form**, including any `.html` suffix. If the link is `https://x.com/a.html`, the pill must read `x.com/a.html`, not `x.com/a`.
+  - Also set Reveal's logical size to the slide size (`width: 1920, height: 1080, margin: 0`) or `?print-pdf` renders each page as a tiny centered box on the sheet regardless of the print dialog's scale setting.
+
+**Pixel-perfect PDF via img2pdf (recommended for handouts)** — bypass the browser entirely. Concatenate the rendered slide JPGs straight into a PDF:
+
+```python
+import img2pdf, glob
+files = sorted(glob.glob('generated_slides_4k/slide_*_0.jpg'))
+with open('handout/slides.pdf', 'wb') as f:
+    f.write(img2pdf.convert(files))
+```
+
+This is lossless (no browser re-rasterization), one page per slide, exact 16:9, and immune to the print-scale and link-rewrite bugs above. The tradeoff: image-only PDF has **no clickable links** — so the on-slide pill text must be a readable URL the reader can type or scan. Since the fix above already forces the pill text to equal the URL, this is free. Document in the handout README that PDF links are printed, not clickable.
 
 ## Known traps
 
@@ -137,3 +154,5 @@ Notes:
 | Zero-padding hotzones | Link works in testing, misses by a few pixels for the audience | Keep the 1.5% default padding; painted pills tolerate a slightly larger invisible hotzone |
 | Styling the whole deck from the overlay CSS | Global selectors leak into Reveal chrome | Scope every rule under `.reveal section .img-overlay*` |
 | fetch() for local decks | Overlays silently absent when the deck is opened via `file://` | Inline the JSON into the `overlay-data` script tag |
+| Overlay text ≠ href in printed PDF | Live deck link works, but the `?print-pdf` PDF points at the visible text and 404s (e.g. pill says `x.com/a`, href is `x.com/a.html`) | Make the painted pill text and `overlays.json` `label` exactly equal the href's visible form, `.html` and all |
+| Tiny centered pages on `?print-pdf` | Every PDF page is a small box mid-sheet, scale slider does nothing | Set Reveal `width: 1920, height: 1080, margin: 0`; or skip the browser and build the PDF with img2pdf from the slide images |
