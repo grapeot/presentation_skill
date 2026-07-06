@@ -2,6 +2,13 @@
 
 ## Changelog
 
+### 2026-07-06
+
+- Added image-deck guidance for text-heavy slides: keep title regions wide, require normal-width typography, and prevent image models from horizontally squeezing long text.
+- Added a trap for internal prompt constraints leaking into visible slide copy.
+- Verified `.venv/bin/python -m pytest -v` — 16 tests passed.
+- Privacy scan found only existing public-safety documentation references; no new private paths, credentials, or deck-specific context.
+
 ### 2026-06-29 (later)
 
 - Rewrote `skills/skill_presentation.md` per `skill_creator_skill.md`: result-oriented acceptance criteria, known traps from real misroutes, removed SOP checklist.
