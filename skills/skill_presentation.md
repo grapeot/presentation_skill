@@ -40,6 +40,7 @@ A deck is **done** when all of the following hold. If any fail, the task is not 
 **Image mode**
 
 - `visual_guideline.md` defines shared style; `outline_visual.md` has one `#### Slide N:` block per slide with **exact** on-slide text in prompts (not "make it look professional").
+- Prompts distinguish **visible copy** from **design instructions**. Internal constraints such as "do not show performance numbers" or "use public data only" stay in the prompt as rules, never as text the model may paint onto the slide.
 - Every `data-background` path in `index.html` resolves to a file under `generated_slides/`.
 - Logos, QR codes, screenshots, and tables use real assets under `imgs/` — never ask the image model to invent them.
 - On-slide text is legible; garbled text is a failure (simplify copy, re-render, or overlay exact text in HTML/CSS).
@@ -93,6 +94,7 @@ When a slide needs navbar + logo + chart (or QR), list all assets in `outline_vi
 
 - One claim per slide; prefer concrete statements over topic labels like "Architecture".
 - Image decks: unify style through `visual_guideline.md` + shared style reference assets; render only after outline text is locked.
+- Text-heavy image slides: keep title regions wide, cap visible labels, and explicitly require normal-width typography. Long text in a narrow column often makes image models fake a condensed font or horizontally squeeze letters.
 - HTML decks: keep slide state local; treat `examples/html/js/slides/title.js` as the module contract reference.
 - Prefer the workspace image-generation skill when available.
 - Image decks that show URLs/QRs or embed live artifacts: add a clickable HTML overlay layer per [docs/clickable_overlays.md](../docs/clickable_overlays.md) — prompt the zone, measure the rendered element's bbox by vision, inject padded `<a>`/iframe hotzones, verify with a draw-back check.
@@ -105,6 +107,8 @@ When a slide needs navbar + logo + chart (or QR), list all assets in `outline_vi
 | Treating Python helpers as an AI planner | Expecting `deck_plan.py` or CLI to generate slide content | Python only scaffolds directories and encodes validation rules. The agent writes `deck_plan.md`, outlines, and modules. |
 | Silent mode downgrade | Image API fails → agent switches to HTML without asking | Stop; state the blocker; keep source artifacts complete; switch modes only if the user allows. |
 | Model-invented text | QR codes that don't scan, alien glyphs, hallucinated logos | Put exact pixels in `imgs/` and inject via outline Asset sections; specify exact readable copy in prompts. |
+| Internal constraints painted onto slides | Prompt says "no private numbers" or "public data only" and the rendered slide visibly includes that caveat | Separate rules from visible copy. Phrase constraints as "Do not render any text about X" and enumerate the exact visible headings/labels the model may draw. |
+| Horizontally squeezed typography | Long titles or card text look narrow/condensed, especially inside a fixed left column | Shorten the visible phrase, give the title full width, and add: "Use normal-width Inter or Helvetica-style sans-serif, not condensed. Do not horizontally scale or compress letters; reduce font size or wrap at word boundaries." If it persists, move exact text to an HTML/CSS overlay. |
 | Mixing paradigms on one slide | Editing JS modules for a slide that should be a rendered JPG (or vice versa) | Pick one mode per slide; use html mode only for slides that need live interaction. |
 | Skipping examples | New slides drift from the scaffold contract | Read root scaffold + `examples/` before writing; adapt from those patterns. |
 | Preview without server | Opening `index.html` as `file://` breaks modules/CDN | Use `start-server.py`; pick a free port if defaults are taken. |
