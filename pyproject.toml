@@ -13,7 +13,8 @@ authors = [{ name = "grapeot" }]
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+pdf = ["img2pdf>=0.5", "pypdf>=4.0"]
+dev = ["pytest>=8.0", "img2pdf>=0.5", "pypdf>=4.0"]
 
 [project.scripts]
 presentation-skill = "presentation_skill.cli:main"

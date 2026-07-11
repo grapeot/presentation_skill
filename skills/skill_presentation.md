@@ -31,6 +31,7 @@ A deck is **done** when all of the following hold. If any fail, the task is not 
 - `deck_plan.md` states mode, audience, thesis, and a slide list where each entry has one claim and a visual role.
 - `speaker_notes.md` exists; notes add spoken context, they do not repeat slide text verbatim.
 - A validation note records what was previewed and what remains unresolved.
+- If a distribution PDF is requested for an image deck, it is built with `scripts/presentation-skill export-pdf` (compat gate passed, link count matches the overlay plan) — not by printing from a browser.
 
 **Preview**
 
@@ -62,6 +63,15 @@ A deck is **done** when all of the following hold. If any fail, the task is not 
 bash scripts/presentation-skill "Topic" --mode image --output deck_work
 bash scripts/presentation-skill "Topic" --request "HTML only" --output deck_work
 ```
+
+**PDF export (image decks — the default way to produce the distribution PDF)**
+
+```bash
+bash scripts/presentation-skill export-pdf deck_work --check-only   # compatibility gate only
+bash scripts/presentation-skill export-pdf deck_work --output deck_work/handout/slides.pdf
+```
+
+Builds the PDF straight from the slide images (lossless, no browser printing) and embeds every `overlay-data` hotzone as a PDF link annotation at the same rect + padding as the HTML overlay, so PDF and HTML click identically. The compatibility gate requires every section to be background-image + notes only and fails loudly otherwise — if it reports INCOMPATIBLE, fix the deck or fall back to a manual export; never ship a silently lossy PDF. Requires the `[pdf]` extra (img2pdf + pypdf).
 
 After init, read `deck_work/README.md`. Active mode is at deck root; the other mode is under `examples/`.
 
@@ -120,7 +130,8 @@ When a slide needs navbar + logo + chart (or QR), list all assets in `outline_vi
 | Multi-image asset limit (gpt-image-2) | Listing navbar + logo + QR (or chart + style ref) under `Asset` triggers `gpt-image-2 currently supports at most one input image` | **Do not drop assets.** Keep every needed pixel reference in the outline `Asset` list. `tools/generate_slides.py` auto-stacks multiple assets vertically with Pillow into `generated_slides/stacked_assets_slide_N.png` and passes that single composite to the model. **Prompt must name the stack order** — e.g. 「参考叠加 Asset 自上而下依次为：导航条样式、Logo、二维码」 — so the model maps each region correctly. Asset order in the outline = top-to-bottom stack order. |
 | Hallucinated Quantitative Chart Details | asking the image model to draw exact numerical charts (bar charts, line graphs) | Always pre-plot quantitative charts using Python + Matplotlib to generate a precise PNG image, use it as the single `Asset`, and guide the image model to replicate its content and layout. |
 | Painted links that don't click | A URL pill or QR caption rendered into the slide image; audience receives the HTML deck and nothing is clickable, or overlay coords copied from the prompt miss the element by ~5% | Add an overlay layer per [docs/clickable_overlays.md](../docs/clickable_overlays.md): coordinates come from post-generation vision measurement (not from the prompt), hotzones get 1.5% padding, and each overlay is verified with a Pillow draw-back check. |
-| Printed-PDF link 404s / tiny pages | `?print-pdf` rewrites overlay links to the *visible pill text* (so `x.com/a` 404s when href is `x.com/a.html`), and un-sized Reveal prints each slide as a tiny centered box | Make pill text = href's visible form incl. `.html`; set Reveal `width:1920,height:1080,margin:0`; or build the handout PDF losslessly with img2pdf from the slide images. See [docs/clickable_overlays.md](../docs/clickable_overlays.md) Export caveats. |
+| Printed-PDF link 404s / tiny pages | `?print-pdf` rewrites overlay links to the *visible pill text* (so `x.com/a` 404s when href is `x.com/a.html`), and un-sized Reveal prints each slide as a tiny centered box | Don't print from the browser at all: `scripts/presentation-skill export-pdf <deck>` builds the PDF from the images and embeds overlay links as real PDF annotations. Browser printing is a last resort only when the compat gate reports the deck isn't a pure image deck. |
+| Dense text exhibits corrupted on hi-res re-render | A screenshot asset full of numbers (a report, a table) passes QC at draft size, then the 4K batch redraws it with mangled digits ("$25.11" → "$2.11") — and re-rolls keep mangling different spots | Stop re-rolling. Composite deterministically: locate the exhibit frame on the generated slide (detect the border lines programmatically), re-render the true source (e.g. headless-Chrome screenshot of the styled document, width-tuned to the frame's aspect), and paste the real pixels inside the frame with Pillow. The model draws the frame; the content stays ground truth. |
 
 ## Additional resources
 

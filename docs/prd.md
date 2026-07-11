@@ -29,9 +29,16 @@ Agents lack a single, opinionated contract for presentation decks. Legacy repos 
 
 ### CLI scaffold
 
-- `presentation-skill` copies templates to a target directory.
+- `presentation-skill init` (legacy positional form still supported) copies templates to a target directory.
 - Active mode lands at deck root; the other mode lands under `examples/` for cross-reference.
 - Every scaffold includes `README.md` with preview and generation steps.
+
+### PDF export (image decks)
+
+- `presentation-skill export-pdf <deck_dir>` builds the distribution PDF directly from the slide images — no browser printing.
+- **Compatibility gate:** export runs only when every `<section>` in `index.html` is background-image + `<aside class="notes">` (+ comments) and every background file exists. Anything else fails loudly with a per-section report (`--check-only` runs the gate alone); a lossy PDF must never be produced silently.
+- Clickable hotzones from the `overlay-data` JSON block are embedded as PDF link annotations at the same fractional rects and default padding as the HTML overlay layer, so PDF and HTML click identically.
+- Page images embed losslessly via `img2pdf`; pypdf adds annotations. Both ship as the optional `[pdf]` extra with a friendly install hint when missing.
 
 ### Public safety
 

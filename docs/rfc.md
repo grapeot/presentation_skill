@@ -24,7 +24,8 @@ presentation_skill/
 ├── src/presentation_skill/
 │   ├── deck_plan.py            # mode selection + deck-plan validation contract
 │   ├── starter.py              # CLI template copy / scaffold generation
-│   ├── cli.py
+│   ├── export_pdf.py           # image-deck → clickable PDF (compat gate + img2pdf + link annots)
+│   ├── cli.py                  # subcommands: init (legacy positional supported), export-pdf
 │   └── templates/
 │       ├── common/             # start-server.py, slideModule.js, css
 │       ├── bootstrap/          # DECK_README.md → copied as deck README.md
@@ -82,3 +83,8 @@ If we never wire CLI validation, `deck_plan.py` still earns its keep as the exec
 ## Migration Notes
 
 Legacy repos may be referenced for historical examples. This repo vendors a trimmed example set under `templates/examples/` only.
+
+
+## PDF Export Decision (2026-07)
+
+Browser `?print-pdf` proved lossy for image decks: it rewrites overlay links to the visible pill text (404s) and mis-sizes pages unless Reveal is configured just so. Since a compatible image deck is fully described by (ordered background images, overlay-data JSON), the export path builds the PDF from those two inputs directly: `img2pdf` for lossless page embedding, `pypdf` for `/Link` annotations at the same fractional rects (+1.5% pad) the HTML overlay layer uses. The compatibility check is a hard gate, not a warning: a section carrying any visible content beyond background + notes fails the export, because that content would silently vanish from the PDF. Dependencies stay out of the core install as the `[pdf]` extra.
