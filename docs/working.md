@@ -2,6 +2,15 @@
 
 ## Changelog
 
+### 2026-07-10
+
+- Added `export-pdf` CLI subcommand: image-deck → distribution PDF with clickable link annotations, built straight from slide images (img2pdf lossless) + overlay-data rects (pypdf `/Link` annots, same 1.5% pad as the HTML layer). No browser printing.
+- Compatibility gate (`--check-only`): every section must be background-image + notes only, backgrounds must exist, overlay JSON must be sane — otherwise fail loudly per section; never emit a lossy PDF silently.
+- CLI moved to subcommands (`init`, `export-pdf`); legacy positional invocation auto-routes to `init` so existing scripts keep working.
+- New optional dependency group `[pdf]` (img2pdf, pypdf); `[dev]` includes them for tests.
+- Added `tests/test_export_pdf.py` (9 tests, offline, synthetic PNG decks). Verified `.venv/bin/python -m pytest -q` — 25 tests passed.
+- Dogfooded on a real 25-slide / 15-hotzone production deck: check passed, PDF verified page count, link count, and URI targets.
+
 ### 2026-07-06
 
 - Added image-deck guidance for text-heavy slides: keep title regions wide, require normal-width typography, and prevent image models from horizontally squeezing long text.

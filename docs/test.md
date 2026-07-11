@@ -10,7 +10,7 @@ Command:
 
 ```bash
 uv venv .venv
-uv pip install --python .venv/bin/python -e '.[dev]'
+uv pip install --python .venv/bin/python -e '.[dev]'  # dev extra includes img2pdf + pypdf for export tests
 .venv/bin/python -m pytest -v
 ```
 
@@ -67,3 +67,14 @@ This is not automated in CI but defines manual acceptance for deck work:
 - Opt-in live test for `generate_slides.py` behind `PRESENTATION_SKILL_LIVE_TESTS=1`
 - CLI `--validate-deck-plan` parsing markdown into `SlideSpec` list
 - Playwright smoke on example `index.html` (optional; user may skip if preview confirmed manually)
+
+
+### `tests/test_export_pdf.py`
+
+Covers `export_pdf.py` and the `export-pdf` CLI subcommand, fully offline (synthetic decks with pure-Python-generated PNGs):
+
+- compatibility gate passes on background+notes-only sections and counts hotzones
+- gate rejects: extra visible content in a section, missing background files, invalid overlay rects, non-http(s) hrefs, overlay ids with no matching section
+- `export_pdf()` writes a PDF with one page per section and `/Link` annotations whose `/Rect` matches the fractional coords + default padding (y-flipped to PDF space)
+- decks without an overlay block export with zero annotations
+- CLI: `--check-only` exit codes (0 compatible / 2 incompatible), full export path, and the legacy positional `init` invocation still scaffolding
