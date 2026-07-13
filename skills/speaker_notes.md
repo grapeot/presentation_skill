@@ -51,6 +51,9 @@ These are enabling methods, not a mandatory production sequence.
 | Trap | How it sounds | Correction |
 |---|---|---|
 | Textbook delivery | “The model's default behavior is shaped by two distinct training forces.” | Explain the familiar effect first, then introduce the technical names only if they help. |
+| Over-casual textbook tone | "Consumer applications might seem to remember your past chats." | Nudge to active, engaging spoken prose: "Now, you might ask: what about ChatGPT? It seems to remember past chats. But..." |
+| Over-shortening content | Cutting explanation details, examples, or staging steps to meet word counts. | Keep the original detail length and richness, but restructure into clean, engaging sentences. |
+| Restricted patterns & metaphors | Using "not X, but Y" templates or "grow/growth" action metaphors. | State relations directly (e.g., "enforce layout, while specific logic...") and use neutral actions like "expand" or "advance". |
 | Breathless nesting | One sentence contains three listed outputs, a relative clause, and a final qualifier | Split it. Give each spoken sentence one main payload. |
 | Artificial conversational tone | “Let's cut straight to it,” “get our bearings,” or repeated stage banter | Use ordinary spoken English and let the content carry confidence. |
 | Repeated handoff | Slide A asks a question; Slide B opens by asking the same question again | Let Slide B answer in its first sentence. |
