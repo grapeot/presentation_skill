@@ -29,7 +29,7 @@ A deck is **done** when all of the following hold. If any fail, the task is not 
 **Directory & plan**
 
 - `deck_plan.md` states mode, audience, thesis, and a slide list where each entry has one claim and a visual role.
-- `speaker_notes.md` exists; notes add spoken context, they do not repeat slide text verbatim.
+- `speaker_notes.md` exists; notes add spoken context, they do not repeat slide text verbatim. Create or substantially rewrite them against the [speaker-notes spoken-delivery contract](speaker_notes.md).
 - A validation note records what was previewed and what remains unresolved.
 - If a distribution PDF is requested for an image deck, it is built with `scripts/presentation-skill export-pdf` (compat gate passed, link count matches the overlay plan) — not by printing from a browser.
 
@@ -103,6 +103,7 @@ When a slide needs navbar + logo + chart (or QR), list all assets in `outline_vi
 ## Methodology (suggestions, not mandatory order)
 
 - One claim per slide; prefer concrete statements over topic labels like "Architecture".
+- For direct-read scripts or substantial speaker-note revisions, load [speaker_notes.md](speaker_notes.md). It defines the breath test, transition handoffs, factual-fidelity gate, and long-deck batch review.
 - Image decks: unify style through `visual_guideline.md` + shared style reference assets; render only after outline text is locked.
 - Text-heavy image slides: keep title regions wide, cap visible labels, and explicitly require normal-width typography. Long text in a narrow column often makes image models fake a condensed font or horizontally squeeze letters.
 - HTML decks: keep slide state local; treat `examples/html/js/slides/title.js` as the module contract reference.
@@ -136,4 +137,5 @@ When a slide needs navbar + logo + chart (or QR), list all assets in `outline_vi
 ## Additional resources
 
 - Detailed contracts, scaffold layout, installation: [reference.md](reference.md)
+- Direct-read scripts and spoken delivery: [speaker_notes.md](speaker_notes.md)
 - Clickable links / live-artifact embeds on image slides: [docs/clickable_overlays.md](../docs/clickable_overlays.md)
