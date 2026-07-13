@@ -34,7 +34,7 @@ Covers end-to-end CLI via `scripts/presentation-skill`:
 
 Covers repo invariants:
 
-- Exactly one root skill file (`skill_presentation.md`); `reference.md` is supporting doc only
+- Exactly one root skill file (`skill_presentation.md`); `reference.md` and `speaker_notes.md` are supporting docs only
 - Required docs exist (`prd.md`, `rfc.md`, `working.md`, `test.md`)
 - No legacy large artifacts at repo root
 - README points to root skill and public GitHub URL

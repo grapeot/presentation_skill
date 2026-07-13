@@ -31,7 +31,7 @@ The default test suite must stay offline. Do not add live image-generation tests
 
 It must not call external image APIs directly. Image generation belongs to the installing workspace, commonly through an image-generation skill or another user-configured tool.
 
-`skills/skill_presentation.md` is the only root skill exposed by this repo. `skills/reference.md` is progressive-disclosure support, not a second root skill.
+`skills/skill_presentation.md` is the only root skill exposed by this repo. `skills/reference.md` and `skills/speaker_notes.md` are progressive-disclosure support, not additional root skills.
 
 ## Public Safety
 

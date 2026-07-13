@@ -2,6 +2,15 @@
 
 ## Changelog
 
+### 2026-07-12
+
+- Added `skills/speaker_notes.md` as progressive-disclosure guidance for authoritative, conversational direct-read scripts.
+- Added measurable delivery gates: one main payload per sentence, breath-test review above 24 words, concept-before-term, cross-slide handoff ledger, and separate spoken/demo timing.
+- Documented real failure modes from long-deck revisions: textbook delivery, decorative idioms, repeated transition questions, nested three-part sentences, factual drift, and batch-boundary breaks.
+- Linked the new guidance from the root presentation skill while preserving exactly one discoverable root skill.
+- Updated the public-contract test to distinguish the one frontmatter-bearing root skill from supporting Markdown resources.
+- Verified `.venv/bin/python -m pytest -v` — 25 tests passed. Privacy scan of `skills/*.md` found no private paths, credentials, or deck-specific names.
+
 ### 2026-07-10
 
 - Added `export-pdf` CLI subcommand: image-deck → distribution PDF with clickable link annotations, built straight from slide images (img2pdf lossless) + overlay-data rects (pypdf `/Link` annots, same 1.5% pad as the HTML layer). No browser printing.
