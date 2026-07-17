@@ -26,6 +26,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from urllib.parse import urlsplit
 
 DEFAULT_PAD = 0.015
 
@@ -71,6 +72,14 @@ def _load_index(deck_dir: Path) -> str:
     if not index.is_file():
         raise FileNotFoundError(f"{index} not found — not a deck directory?")
     return index.read_text(encoding="utf-8")
+
+
+def _is_safe_link_target(href: str) -> bool:
+    """Allow web URLs and local relative links, but reject executable schemes."""
+    parsed = urlsplit(href)
+    if parsed.scheme in {"http", "https"}:
+        return True
+    return not parsed.scheme and not parsed.netloc and not href.startswith(("/", "\\"))
 
 
 def check_compatibility(deck_dir: Path) -> CompatReport:
@@ -133,8 +142,11 @@ def check_compatibility(deck_dir: Path) -> CompatReport:
                     or not (rect[0] < rect[2] and rect[1] < rect[3])
                 ):
                     problems.append(f"{sid} hotzone {j}: invalid rect {rect!r}")
-                if not href.startswith(("http://", "https://")):
-                    problems.append(f"{sid} hotzone {j}: href must be http(s), got {href!r}")
+                if not isinstance(href, str) or not _is_safe_link_target(href):
+                    problems.append(
+                        f"{sid} hotzone {j}: href must be http(s) or a safe relative link, "
+                        f"got {href!r}"
+                    )
 
     return CompatReport(ok=not problems, problems=problems, sections=sections, overlays=overlays)
 

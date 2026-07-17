@@ -50,6 +50,7 @@ Conventions:
 - `rect` is the measured bbox of the painted element; the injector pads it by 1.5% per side to absorb measurement error.
 - Default overlays are invisible hotzones over the painted element (the image already looks like a button). Set `"visible": true` to render a styled pill instead — useful when the slide image deliberately leaves an empty zone.
 - `label` is for the agent's own bookkeeping and accessibility (`aria-label`); it is not rendered unless `visible`.
+- `href` may be an `http(s)` URL or a safe relative link such as `../handout/index.html`. Relative links remain relative in both the HTML deck and exported PDF, so place the PDF beside `index.html` when they should resolve to the same local targets.
 
 ## Injection snippet
 
