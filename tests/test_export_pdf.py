@@ -123,8 +123,33 @@ def test_compat_rejects_bad_overlay(tmp_path: Path) -> None:
     assert not report.ok
     joined = "\n".join(report.problems)
     assert "invalid rect" in joined
-    assert "http(s)" in joined
+    assert "http(s) or a safe relative link" in joined
     assert "unknown section id" in joined
+
+
+def test_compat_accepts_relative_overlay_link(tmp_path: Path) -> None:
+    relative_overlay = """
+  <script id="overlay-data" type="application/json">
+  { "slide-01": [ { "href": "../handout/index.html",
+    "rect": [0.1, 0.1, 0.2, 0.2] } ] }
+  </script>
+"""
+    _write_deck(tmp_path / "deck", sections=GOOD_SECTIONS, overlay=relative_overlay)
+    report = check_compatibility(tmp_path / "deck")
+    assert report.ok, report.problems
+
+
+@pytest.mark.parametrize("href", ["/absolute/file.html", "file:///tmp/a.html", "javascript:alert(1)"])
+def test_compat_rejects_unsafe_local_overlay_links(tmp_path: Path, href: str) -> None:
+    overlay = f"""
+  <script id="overlay-data" type="application/json">
+  {{ "slide-01": [ {{ "href": "{href}", "rect": [0.1, 0.1, 0.2, 0.2] }} ] }}
+  </script>
+"""
+    _write_deck(tmp_path / "deck", sections=GOOD_SECTIONS, overlay=overlay)
+    report = check_compatibility(tmp_path / "deck")
+    assert not report.ok
+    assert any("safe relative link" in problem for problem in report.problems)
 
 
 def test_export_writes_pdf_with_links(tmp_path: Path) -> None:
@@ -150,6 +175,24 @@ def test_export_writes_pdf_with_links(tmp_path: Path) -> None:
     assert y1 == pytest.approx(h - (0.85 + 0.015) * h, abs=0.5)
     assert y2 == pytest.approx(h - (0.75 - 0.015) * h, abs=0.5)
     assert reader.pages[1].get("/Annots") in (None, [])
+
+
+def test_export_preserves_relative_link_target(tmp_path: Path) -> None:
+    pypdf = pytest.importorskip("pypdf")
+    pytest.importorskip("img2pdf")
+    relative_overlay = """
+  <script id="overlay-data" type="application/json">
+  { "slide-01": [ { "href": "../handout/index.html",
+    "rect": [0.25, 0.75, 0.75, 0.85] } ] }
+  </script>
+"""
+    deck = tmp_path / "deck"
+    _write_deck(deck, sections=GOOD_SECTIONS, overlay=relative_overlay)
+    output, _, links = export_pdf(deck)
+    assert links == 1
+    reader = pypdf.PdfReader(str(output))
+    annot = reader.pages[0]["/Annots"][0].get_object()
+    assert annot["/A"]["/URI"] == "../handout/index.html"
 
 
 def test_export_without_overlays(tmp_path: Path) -> None:

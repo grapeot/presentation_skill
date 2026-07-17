@@ -4,70 +4,49 @@ Read this file when creating, expanding, or substantially rewriting speaker note
 
 ## Goal
 
-Write a direct-read script that sounds like a knowledgeable speaker addressing the room. The notes should be conversational without becoming casual, and authoritative without sounding like a textbook.
+Write a direct-read script that sounds like a knowledgeable speaker addressing the room. The notes should be conversational without becoming casual, and authoritative without sounding like a textbook. Speaker notes add the reasoning, examples, transitions, and boundaries that do not fit on the slide.
 
-Speaker notes add the reasoning, examples, transitions, and boundaries that do not fit on the slide. They should not read the visible slide copy back to the audience.
+---
 
 ## Acceptance Criteria
 
-### Spoken language
+### 1. Spoken Language & Podium Voice
+- **Natural Contractions**: Use natural contractions (e.g., `don't`, `it's`, `what's`, `we've`) naturally. Do not manufacture conversational tone with forced idioms or jokes.
+- **Easy to Say**: Each sentence must be easy to say in one breath. Keep ordinary sentences between 12-20 words. **Hard gate**: no ordinary spoken sentence may exceed 22 words.
+- **Single Payload**: One sentence may carry at most one main payload and one supporting clause. If it contains a condition, an exception, and a consequence, split it.
+- **No Symmetrical Slogans**: Avoid repeated "not X, but Y" templates or formulaic slogans. They make a direct-read script sound AI-generated.
 
-- Each sentence advances one main judgment or action.
-- A normal sentence is easy to say in one breath. As a practical default, aim for 12-20 English words. Review every sentence over 24 words and split it unless a quote or fixed term makes that impossible.
-- Three ideas do not belong inside one sentence followed by another clause. Give the ideas separate sentences or introduce the group, then explain each item.
-- Use natural contractions where the speaker would use them. Do not manufacture conversational tone with decorative idioms, jokes, or exaggerated metaphors.
-- Authority comes from clear judgment, specific evidence, and explicit boundaries. It does not come from abstract nouns, long sentences, or terminology.
-- A listener should understand each concept when it first appears. Give the intuitive meaning before the formal label; do not start with a dictionary definition.
+### 2. Narrative Flow & Transitions
+- **Handoff Contract**: Slide transitions must behave like a physical handoff. Slide A's ending must explicitly raise the question or premise that Slide B's first sentence answers.
+- **No Logical Detours**: When Slide B starts, it must address the handoff from Slide A immediately. Do not announce the new topic and then step backward into a detached history review.
+- **Explain "Why Now"**: Introduce a concept only at the moment the audience needs it. Frame the intuitive meaning before the formal label.
 
-### Narrative flow
+### 3. Motivation, General-to-Specific, and Division
+- **Motivation First**: Never list components, failures, or principles before the audience knows why they matter. Establish the shared parent problem first.
+- **General-to-Specific Signposting (总分结构)**: Once the parent problem and motivation are clear, **do not jump into the list ad hoc**. You must write a clear, brief general-to-specific preview sentence (e.g., *"We need to screen workers on four practical fronts: A, B, C, and D. Let's look at each."*) before explaining the items.
 
-- Each slide has one spoken job. The notes explain that job and then hand the argument forward.
-- Transitions behave like a handoff. If one slide ends by asking a question, the next slide answers it directly. It must not restate the same question in different words.
-- The opening of a slide should make the topic or frame clear before adding exclusions, caveats, or detail. Do not make listeners wait until the end of the sentence to learn what the sentence is about.
-- A transition may be a statement. Do not force every slide to end with a rhetorical question or announce “on the next slide.”
-- References such as “this,” “that context,” or “the system” must have an unmistakable antecedent in the preceding sentence.
+---
 
-### Fidelity and staging
+## Podium Speech Translation Guide
 
-- Preserve the deck's facts, numbers, compliance boundaries, and approved claims. A prose rewrite must not add examples or interpretations that are absent from the source material.
-- Preserve stage directions and keep them visually distinct from spoken prose.
-- The spoken script and embedded notes in the preview deck must match.
-- Timing labels are estimates, not evidence. Check word count, live demonstrations, file walkthroughs, pauses, and audience interaction separately.
+Use this guide to translate written, textbook-style drafts into authentic spoken podium voice:
 
-## Useful Working Methods
+| Written / Textbook Style (Avoid) | Spoken / Podium Voice (Prefer) | Why? |
+|---|---|---|
+| "The model's default behavior is shaped by two distinct training forces. First is..." | "Now, you might ask: how does the model actually learn? It comes down to two forces. Let's look at..." | Engages the room with a rhetorical question; moves structure after motivation. |
+| "Smarts are not enough. We evaluate workers across four distinct dimensions: reasoning quality, instruction following..." | "So, smarts aren't enough. We need to screen workers on four practical fronts: reasoning, rules, persistence, and tools. Let's look at each. First..." | Uses a transition cue (`So`), natural contractions, and a clear general-to-specific signpost. |
+| "What form should the final artifact take? You might assume it is a PDF report. Human cognitive bandwidth is limited..." | "But what form should that artifact take? You might assume it's just another text report. But we can do better. Think about your morning..." | Bridges from the previous slide, uses personal reference (`your morning`), and creates visual stakes. |
+| "The provenance is narrow. We are asking whether the artifact earned the confidence its presentation invites." | "This isn't a mission-impossible test. We're just checking whether the claims actually match the sources." | Translates abstract evaluation into a concrete, observable action. |
 
-These are enabling methods, not a mandatory production sequence.
-
-**Rewrite in bounded groups.** For a long deck, work in groups of roughly three to five slides. Read the previous slide's ending and the next slide's opening before editing. This keeps local context manageable without breaking transitions at batch boundaries.
-
-**Keep a handoff ledger.** For every slide boundary, record what the first slide hands forward and what the next slide does with it. The second entry should say “answers,” “shows,” “qualifies,” or “applies,” not “asks again.”
-
-**Run a breath test.** Read the script aloud. Mark every place where the speaker has to rush, hold several ideas in memory, or reach the verb late. Sentence length is only a diagnostic; clause count and information order matter more.
-
-**Separate content review from prose review.** Lock claims and examples before polishing delivery. After a content change, rewrite only the affected notes and transitions, then rerun the factual check.
+---
 
 ## Known Traps
 
 | Trap | How it sounds | Correction |
 |---|---|---|
-| Textbook delivery | “The model's default behavior is shaped by two distinct training forces.” | Explain the familiar effect first, then introduce the technical names only if they help. |
-| Breathless nesting | One sentence contains three listed outputs, a relative clause, and a final qualifier | Split it. Give each spoken sentence one main payload. |
-| Artificial conversational tone | “Let's cut straight to it,” “get our bearings,” or repeated stage banter | Use ordinary spoken English and let the content carry confidence. |
-| Repeated handoff | Slide A asks a question; Slide B opens by asking the same question again | Let Slide B answer in its first sentence. |
-| Delayed frame | The sentence begins with exclusions before saying what part of the talk it describes | Put the frame first: “For today's agenda...” or “In this experiment...” |
-| Mechanical parallelism | Several consecutive sentences begin with First, Second, Third or “We will...” | Vary sentence shape and group only ideas that listeners need to compare. |
-| Vague authority | Dense phrases such as “decision surface optimization” replace an actual judgment | State what the speaker believes, what supports it, and where the evidence stops. |
-| Rewrite drift | A style pass adds a new fact, example, condition, or source | Compare every factual statement with the approved outline and source artifacts. |
-| Batch-boundary break | Each five-slide batch reads well alone, but Slide 5 does not lead into Slide 6 | Include one-slide overlap in every batch review and inspect the handoff ledger. |
-
-## Final Review
-
-Before delivery, verify all of the following:
-
-- Read the notes aloud from beginning to end, not only slide by slide.
-- Review every sentence over 24 words and every sentence with more than one dependent clause.
-- Search for repeated questions across adjacent slides.
-- Search for decorative idioms, generic keynote phrases, and repeated contrast templates such as “not X, but Y.”
-- Confirm that every new term has an intuitive introduction before or at first use.
-- Confirm that slide text, speaker notes, embedded Reveal notes, and live-demo actions agree.
-- Report spoken word count and estimate pure speaking time separately from demonstrations and discussion.
+| **Textbook Delivery** | "The default behavior is shaped by two forces..." | Explain the familiar effect first, then introduce the technical names only if they help. |
+| **Audit-Report Voice** | "The provenance is narrow..." | Say the practical boundary: "We're just checking whether the claims match the sources." |
+| **Plausible Narrative Override** | The notes tell a coherent story, but ignore the actual slide visual. | Rebuild from the locked slide claim, visual role, and chapter handoff. |
+| **Silent Logical Jump** | One paragraph ends; the next starts a new topic without warning. | Recover the prior foothold: "So, for a stronger check...", "But there's a catch..." |
+| **Signpost Wallpaper** | Every paragraph starts with the same `So`, `Now`, or `Key point is`. | Keep cues only at genuine logical turns and vary their form. |
+| **Breathless Nesting** | A sentence stays under the word limit but nests condition + exception + consequence. | Split at the logical turn. Give the condition, action, and consequence their own beats. |

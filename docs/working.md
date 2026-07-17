@@ -2,9 +2,26 @@
 
 ## Changelog
 
+### 2026-07-16
+
+- Added a podium test to the speaker-notes contract: every paragraph must sound natural when addressed to a room, not merely read well in a memo.
+- Added guidance to translate audit and authoring abstractions into observable actions and direct checks, with an explicit trap for audit-report voice.
+- Added slide-role fidelity: notes must derive from the locked visible claim, visual role, and chapter handoff rather than from a merely plausible narrative.
+- Separated mechanism, demo, and management-move responsibilities; management moves now extract the underlying human-management principle instead of repeating the preceding AI mechanism.
+- Added artifact-state fidelity for demo narration and grounded expansion rules for longer talks.
+- Added spoken logical signposting for a non-rewind medium: cue continuation, consequence, contrast, limitation, and handoff before introducing the next payload, while avoiding repetitive transition wallpaper.
+- Tightened the breath test into a hard gate: ordinary spoken sentences must stay at or below 22 words and carry no more than one main payload plus one supporting clause.
+
+### 2026-07-14
+
+- Extended image-deck overlays and PDF export to accept safe relative local links alongside HTTP(S) URLs.
+- Kept absolute filesystem paths and executable URI schemes rejected; added compatibility and PDF target-preservation tests.
+- This allows a deck and a PDF placed beside its `index.html` to share measured hotzones for local handouts and demo artifacts.
+
 ### 2026-07-12
 
 - Added `skills/speaker_notes.md` as progressive-disclosure guidance for authoritative, conversational direct-read scripts.
+- Generalized the speaker-notes introduction gate: motivation must precede structure. New concepts, frameworks, and lists now require a clear `why now`; lists may compress established understanding but cannot create it. Added why-now, handoff, and time ledgers plus traps for summary-as-introduction and list-without-parent-question failures.
 - Added measurable delivery gates: one main payload per sentence, breath-test review above 24 words, concept-before-term, cross-slide handoff ledger, and separate spoken/demo timing.
 - Documented real failure modes from long-deck revisions: textbook delivery, decorative idioms, repeated transition questions, nested three-part sentences, factual drift, and batch-boundary breaks.
 - Linked the new guidance from the root presentation skill while preserving exactly one discoverable root skill.
