@@ -11,6 +11,8 @@ Write a direct-read script that sounds like a knowledgeable speaker addressing t
 ## Acceptance Criteria
 
 ### 1. Spoken Language & Podium Voice
+- **Scene Before Abstraction**: When the point involves pressure, judgment, or consequences, first place a person in a concrete moment. Show what they inspect, fear, decide, or do before naming the mechanism.
+- **Podium Voice Is Structural**: Contractions do not rescue textbook prose. Build spoken passages around a person, a visible action, and a consequence; then earn the abstraction.
 - **Natural Contractions**: Use natural contractions (e.g., `don't`, `it's`, `what's`, `we've`) naturally. Do not manufacture conversational tone with forced idioms or jokes.
 - **Easy to Say**: Each sentence must be easy to say in one breath. Keep ordinary sentences between 12-20 words. **Hard gate**: no ordinary spoken sentence may exceed 22 words.
 - **Single Payload**: One sentence may carry at most one main payload and one supporting clause. If it contains a condition, an exception, and a consequence, split it.
@@ -18,6 +20,7 @@ Write a direct-read script that sounds like a knowledgeable speaker addressing t
 
 ### 2. Narrative Flow & Transitions
 - **Handoff Contract**: Slide transitions must behave like a physical handoff. Slide A's ending must explicitly raise the question or premise that Slide B's first sentence answers.
+- **Create Tension, Don't Recap**: A transition should create the need for the next slide. Do not spend the final sentence summarizing the slide the audience just saw.
 - **No Logical Detours**: When Slide B starts, it must address the handoff from Slide A immediately. Do not announce the new topic and then step backward into a detached history review.
 - **Explain "Why Now"**: Introduce a concept only at the moment the audience needs it. Frame the intuitive meaning before the formal label.
 
@@ -50,3 +53,17 @@ Use this guide to translate written, textbook-style drafts into authentic spoken
 | **Silent Logical Jump** | One paragraph ends; the next starts a new topic without warning. | Recover the prior foothold: "So, for a stronger check...", "But there's a catch..." |
 | **Signpost Wallpaper** | Every paragraph starts with the same `So`, `Now`, or `Key point is`. | Keep cues only at genuine logical turns and vary their form. |
 | **Breathless Nesting** | A sentence stays under the word limit but nests condition + exception + consequence. | Split at the logical turn. Give the condition, action, and consequence their own beats. |
+| **Claim Inflation** | A qualified claim becomes absolute during polishing, such as `largely autonomous` becoming `autonomous`. | Lock factual qualifiers before rewriting and verify them word-for-word afterward. |
+| **Outcome-as-Proof** | Growth, usage, or output volume is presented as proof of quality or causation. | Let metrics establish scale. Make quality claims only when the evidence directly supports them. |
+| **Hype Substitution** | Phrases such as `for free`, `forever`, or `while you sleep` replace a precise mechanism. | State what persists, what changes, and who remains accountable. |
+
+---
+
+## Rewrite QA
+
+Substantial rewrites need four separate passes. Do not trust a fluent draft or its self-reported QA.
+
+1. **Lock the contract**: Record the visible slide claim, required facts, qualifiers, numbers, and timing boundary before changing prose.
+2. **Rewrite for the room**: Replace abstract exposition with a concrete person, pressure, action, and consequence where the material supports it.
+3. **Audit every boundary**: For an N-slide deck, inspect all N-1 adjacent handoffs. Read each ending directly beside the next opening.
+4. **Run mechanical gates**: Check sentence length, total spoken word count, slide-note alignment, forbidden phrases, and factual qualifiers after the prose is assembled.
