@@ -1,6 +1,6 @@
 # Presentation Skill
 
-Presentation Skill helps AI coding agents create slide decks. It defaults to image-generated decks, where each slide is rendered as a complete visual scene. If the user explicitly asks to avoid image generation, it falls back to an HTML module deck inspired by SlidePilot and Reveal.js.
+Presentation Skill helps AI coding agents create slide decks. It defaults to image-generated decks, where each slide is rendered as a complete visual scene. Reveal mode keeps exact copy, layout, links, and interaction in HTML/CSS/JavaScript while optionally using generated icons and diagrams as local assets.
 
 This repo is a public, platform-agnostic skill package. It works with agents such as OpenCode, Claude Code, Cursor, Codex, or any terminal coding agent that can read Markdown instructions and write files.
 
@@ -21,7 +21,14 @@ The root skill is `skills/skill_presentation.md`.
 
 Image-generated mode is the default. The agent creates a deck plan, a visual direction, slide prompts, local artifacts, and rendered images through the workspace's configured image generation tool.
 
-HTML module mode is a fallback. Use it when the user says not to use image generation, when the deck must be editable as HTML/CSS/JavaScript, or when the content requires live charts or interactive demos.
+Reveal mode is a first-class alternative. Use it when the deck must preserve exact copy, remain editable, or include code, real data, links, fragments, or interaction. Rendering mode and asset policy are independent: `reveal` can use no generated images, generated local assets, exact assets, or a mix.
+
+```bash
+scripts/presentation-skill "Visual keynote" --mode image --output deck
+scripts/presentation-skill "Technical briefing" --mode reveal --assets mixed --output deck
+```
+
+`--mode html` remains a compatibility alias for `reveal`.
 
 ## Local Development
 

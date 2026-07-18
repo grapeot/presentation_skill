@@ -2,7 +2,7 @@
 
 ## Goal
 
-Ship a public AI-agent skill for creating presentation slide decks. Default mode renders each slide as a cohesive full-slide image; fallback mode builds editable Reveal.js HTML/JS module decks when the user explicitly avoids image generation.
+Ship a public AI-agent skill for creating presentation slide decks. Default mode renders each slide as a cohesive full-slide image; Reveal mode builds exact, editable DOM-composed decks and may use generated local assets without surrendering full-slide composition to an image model.
 
 ## Users
 
@@ -25,7 +25,8 @@ Agents lack a single, opinionated contract for presentation decks. Legacy repos 
 ### Modes
 
 - **Image mode (default)**: agent edits `outline_visual.md` + `visual_guideline.md`, renders via workspace image tooling, previews through Reveal.js `index.html` with `data-background` images.
-- **HTML mode (fallback)**: agent edits `js/slides/*.js` modules; triggered only by explicit user phrases such as "HTML only" or "no image generation".
+- **Reveal mode**: agent keeps exact copy and layout in the DOM, uses a registry for static slides, and adds lifecycle modules only for interactive slides.
+- **Asset policy**: independent `none`, `generated`, `exact`, or `mixed` policy controls local assets. "No image generation" maps to `reveal` + `none`; editable HTML does not itself prohibit generated icons.
 
 ### CLI scaffold
 
@@ -49,6 +50,7 @@ Agents lack a single, opinionated contract for presentation decks. Legacy repos 
 ### Offline helpers
 
 - Small Python package under `src/presentation_skill/` for mode selection, deck-plan validation contract, and starter generation.
+- Provider-neutral Pillow helper for alpha extraction, recoloring, and cropping of generated local assets.
 - No direct image API calls from this repo.
 
 ## Non-Goals
@@ -60,7 +62,7 @@ Agents lack a single, opinionated contract for presentation decks. Legacy repos 
 ## Success Criteria
 
 - A fresh agent can install the skill, run the CLI, preview a deck with `start-server.py`, and know when a deck is complete.
-- Offline tests pass without API keys (`pytest -v`, currently 16 tests).
+- Offline tests pass without API keys (`pytest -v`, currently 40 tests).
 - Privacy scan finds no real credentials or private workspace references.
 - PR #2 merges with consolidated templates and updated skill docs.
 

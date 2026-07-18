@@ -6,12 +6,15 @@ Two older repositories cover related presentation workflows:
 
 - `nbp_slides`: image-generated full-slide deck workflow with generators and a style library.
 - `cursor_slides`: HTML/JavaScript module deck scaffold optimized for Cursor-era agent workflows.
+- A production Reveal.js teaching deck proved generated icons can complement DOM composition without turning slides into full-slide images.
 
 The new public skill keeps the reusable workflow contract and drops large or legacy artifacts.
 
 ## Decision
 
-Create `presentation_skill` as a pure public skill repo with one root skill, offline helpers, docs, tests, and starter templates. Image-generated decks are default; HTML module decks are fallback.
+Create `presentation_skill` as a pure public skill repo with one root skill, offline helpers, docs, tests, and starter templates. Image-generated decks remain the default. Reveal decks are a first-class composition mode with an independent local asset policy.
+
+Do not add a third hybrid mode. Rendering and assets answer different questions: `image` versus `reveal` selects the composition owner; `none`, `generated`, `exact`, or `mixed` selects the asset policy.
 
 ## Architecture
 
@@ -31,7 +34,7 @@ presentation_skill/
 │       ├── bootstrap/          # DECK_README.md → copied as deck README.md
 │       └── examples/
 │           ├── image/          # full image-deck reference
-│           └── html/           # full HTML module reference
+│           └── html/           # Reveal reference; legacy physical name retained
 ├── scripts/presentation-skill
 └── tests/
 ```
@@ -43,7 +46,7 @@ CLI init copies the **active mode** to the deck root and the **other mode** unde
 | CLI flag | Deck root | Cross-reference |
 |----------|-----------|-----------------|
 | `--mode image` | image deck (`outline_visual.md`, `generated_slides/`, image `index.html`) | `examples/html/` |
-| `--mode html` | HTML deck (`js/slides/`, module `index.html`) | `examples/image/` |
+| `--mode reveal` | Reveal deck (`js/deck.js`, optional modules, local assets) | `examples/image/` |
 
 Both modes include `README.md` (from `bootstrap/DECK_README.md`) with preview and generation steps.
 
@@ -59,7 +62,8 @@ Used by the CLI. Copies template directories, writes stub `deck_plan.md`, copies
 
 Contains:
 
-- `choose_mode()` — maps user request text to `image` vs `html` for `--mode auto`
+- `choose_mode()` — maps user request text to `image` vs `reveal` for `--mode auto`
+- `choose_asset_policy()` — selects local asset policy independently from rendering mode
 - `SlideSpec`, `validate_deck_plan()`, `build_deck_plan()` — encode the skill's deck-plan quality rules as testable Python
 
 **Important:** the agent still writes `deck_plan.md` by hand (or via LLM). The Python functions do not call any model. They exist so:
@@ -74,6 +78,12 @@ If we never wire CLI validation, `deck_plan.py` still earns its keep as the exec
 - No slide content generation in Python
 - No image API calls
 - No automatic outline → image pipeline (that lives in copied `tools/generate_slides.py` inside each deck scaffold, using workspace credentials)
+
+### Reveal structure decision (2026-07)
+
+Static slides default to one deck registry because most teaching slides contain markup but no state. Only slides with timers, listeners, charts, media, or WebGL use lifecycle modules. This keeps global editing cheap without weakening cleanup requirements where state actually exists.
+
+Generated icons and diagrams are permitted inside Reveal slides. The DOM remains the composition owner and retains all exact text and data. `prepare-asset` supplies deterministic alpha extraction, tinting, and cropping; provider API calls remain outside this repo.
 
 ## Integration Plan
 

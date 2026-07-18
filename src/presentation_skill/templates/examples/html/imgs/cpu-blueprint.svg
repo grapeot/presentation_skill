@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">CPU blueprint icon</title>
+  <desc id="desc">A flat amber line drawing of a processor with transparent background.</desc>
+  <g fill="none" stroke="#d6a24b" stroke-width="10" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="52" y="52" width="152" height="152" rx="18"/>
+    <rect x="88" y="88" width="80" height="80" rx="10"/>
+    <path d="M76 24v28m36-28v28m32-28v28m36-28v28M76 204v28m36-28v28m32-28v28m36-28v28M24 76h28m-28 36h28m-28 32h28m-28 36h28M204 76h28m-28 36h28m-28 32h28m-28 36h28"/>
+  </g>
+</svg>

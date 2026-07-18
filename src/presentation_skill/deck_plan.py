@@ -6,10 +6,19 @@ from enum import Enum
 
 class DeckMode(str, Enum):
     IMAGE = "image"
+    REVEAL = "reveal"
+    # Kept for callers that imported the pre-Reveal name directly.
     HTML = "html"
 
 
-HTML_FALLBACK_TRIGGERS = (
+class AssetPolicy(str, Enum):
+    NONE = "none"
+    GENERATED = "generated"
+    EXACT = "exact"
+    MIXED = "mixed"
+
+
+REVEAL_TRIGGERS = (
     "no image generation",
     "without image generation",
     "avoid image generation",
@@ -17,6 +26,36 @@ HTML_FALLBACK_TRIGGERS = (
     "pure html",
     "editable html",
     "interactive deck",
+    "reveal.js",
+    "reveal deck",
+    "exact copy",
+    "exact text",
+    "editable deck",
+    "live data",
+    "progressive interaction",
+)
+
+NO_GENERATED_ASSET_TRIGGERS = (
+    "no image generation",
+    "without image generation",
+    "avoid image generation",
+)
+
+GENERATED_ASSET_TRIGGERS = (
+    "generated icon",
+    "generated icons",
+    "ai-generated icon",
+    "ai generated icon",
+    "generated diagram",
+    "generated illustration",
+)
+
+EXACT_ASSET_TRIGGERS = (
+    "screenshot",
+    "real chart",
+    "exact chart",
+    "logo",
+    "qr code",
 )
 
 
@@ -31,9 +70,27 @@ class SlideSpec:
 
 def choose_mode(user_request: str) -> DeckMode:
     normalized = user_request.casefold()
-    if any(trigger in normalized for trigger in HTML_FALLBACK_TRIGGERS):
-        return DeckMode.HTML
+    if any(trigger in normalized for trigger in REVEAL_TRIGGERS):
+        return DeckMode.REVEAL
     return DeckMode.IMAGE
+
+
+def choose_asset_policy(user_request: str, mode: DeckMode | None = None) -> AssetPolicy:
+    normalized = user_request.casefold()
+    if any(trigger in normalized for trigger in NO_GENERATED_ASSET_TRIGGERS):
+        return AssetPolicy.NONE
+
+    has_generated = any(trigger in normalized for trigger in GENERATED_ASSET_TRIGGERS)
+    has_exact = any(trigger in normalized for trigger in EXACT_ASSET_TRIGGERS)
+    if has_generated and has_exact:
+        return AssetPolicy.MIXED
+    if has_generated:
+        return AssetPolicy.GENERATED
+    if has_exact:
+        return AssetPolicy.EXACT
+
+    selected_mode = mode or choose_mode(user_request)
+    return AssetPolicy.GENERATED if selected_mode == DeckMode.IMAGE else AssetPolicy.MIXED
 
 
 def validate_deck_plan(slides: list[SlideSpec]) -> list[str]:
@@ -57,15 +114,25 @@ def validate_deck_plan(slides: list[SlideSpec]) -> list[str]:
     return errors
 
 
-def build_deck_plan(topic: str, slides: list[SlideSpec], mode: DeckMode) -> str:
+def build_deck_plan(
+    topic: str,
+    slides: list[SlideSpec],
+    mode: DeckMode,
+    asset_policy: AssetPolicy | None = None,
+) -> str:
     errors = validate_deck_plan(slides)
     if errors:
         raise ValueError("invalid deck plan: " + "; ".join(errors))
 
+    canonical_mode = DeckMode.REVEAL if mode == DeckMode.HTML else mode
+    policy = asset_policy or (
+        AssetPolicy.GENERATED if canonical_mode == DeckMode.IMAGE else AssetPolicy.MIXED
+    )
     lines = [
         f"# Presentation Deck Plan: {topic}",
         "",
-        f"Mode: {mode.value}",
+        f"Mode: {canonical_mode.value}",
+        f"Asset policy: {policy.value}",
         "",
         "## Slide Plan",
         "",

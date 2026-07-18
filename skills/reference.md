@@ -52,15 +52,16 @@ OpenAI `gpt-image-2` accepts **at most one** input image per call. Slides often 
 - Asset-dependent slides use real source assets, not hallucinated logos or QR codes
 - Deck has a preview path and speaker notes
 
-## HTML Module Fallback Contract
+## Reveal Deck Contract
 
-Keep one logical slide per module. Each module exposes a predictable interface and keeps slide-specific state local.
+Reveal mode keeps exact content and layout in the DOM while allowing generated icons and diagrams as local assets. Read [reveal_decks.md](reveal_decks.md) and [generated_assets.md](generated_assets.md) for the full contracts.
 
 ### Acceptance criteria
 
 - Deck opens from local `index.html` via `start-server.py` or equivalent static server
 - Each slide has one main claim and enough visual structure
-- Interactive slides clean up resources when leaving the slide
+- Static slides may share a deck registry; interactive slides clean up resources when leaving the slide
+- Required copy and quantitative truth never depend on generated pixels
 - Speaker notes present where spoken context is needed
 - No undocumented global state
 
@@ -87,17 +88,20 @@ deck_work/
   tools/
   start-server.py
   css/  js/
-  examples/html/         # full HTML module reference deck
+  examples/html/         # Reveal reference; legacy physical directory name
 ```
 
-**HTML mode (`--mode html`):**
+**Reveal mode (`--mode reveal`; `html` remains a compatibility alias):**
 
 ```
 deck_work/
   README.md
   deck_plan.md
   index.html             # Reveal.js + ES module loader
-  js/slides/
+  js/deck.js            # static slide registry
+  js/slides/            # interactive modules only
+  imgs/
+  visual_guideline.md
   start-server.py
   css/  js/
   examples/image/        # full image-deck reference
@@ -124,7 +128,7 @@ The skill is installed when:
 
 | Situation | Action |
 |-----------|--------|
-| Image generation unavailable | State blocker; keep source artifacts complete; ask for credentials or switch to HTML only if user allows |
+| Image generation unavailable | State blocker; keep source artifacts complete; ask for credentials or switch composition to Reveal only if user allows |
 | Garbled generated text | Simplify visible text, increase typographic emphasis, or textless background + HTML/CSS overlay |
 | Visual drift across slides | Stop per-slide style variations; strengthen shared visual direction |
 

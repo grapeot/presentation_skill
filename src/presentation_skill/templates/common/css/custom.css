@@ -1,227 +1,237 @@
-/* Custom CSS applied to all slides */
 :root {
-  --main-bg-color: #f5f5f5;
-  --main-text-color: #333;
-  --highlight-color: #4285f4;
-  --accent-color: #ea4335;
-  --secondary-color: #fbbc05;
-  --tertiary-color: #34a853;
-  --code-bg-color: #272822;
-  --card-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  --font-family: 'Source Sans Pro', Helvetica, sans-serif;
-  
-  /* Override reveal.js heading text transform */
-  --r-heading-text-transform: capitalize !important;
+  --canvas: #15181e;
+  --surface: #1c2028;
+  --surface-2: #242a34;
+  --hairline: #343b47;
+  --ink: #f1efe7;
+  --body: #c3c8d0;
+  --muted: #8e96a3;
+  --accent: #d6a24b;
+  --accent-tint: rgba(214, 162, 75, 0.12);
+  --warn: #d47a6a;
+  --font-sans: Inter, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SFMono-Regular", Consolas, monospace;
 }
 
 body {
-  background: var(--main-bg-color);
-  color: var(--main-text-color);
-  font-family: var(--font-family);
+  background: var(--canvas);
 }
 
 .reveal {
-  font-family: var(--font-family);
-  color: var(--main-text-color);
+  color: var(--body);
+  font-family: var(--font-sans);
+  font-size: 28px;
 }
 
-.reveal h1, 
-.reveal h2, 
-.reveal h3, 
-.reveal h4 {
-  font-family: var(--font-family);
-  color: var(--highlight-color);
-  margin-bottom: 0.5em;
+.reveal .slides section {
+  box-sizing: border-box;
+  height: 100%;
+  padding: 58px 72px;
+  text-align: left;
 }
 
-.reveal h1 { font-size: 2em; }
-.reveal h2 { font-size: 1.4em; }
-.reveal h3 { font-size: 1em; }
-.reveal h4 { font-size: 0.8em; }
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal p {
+  margin-top: 0;
+  text-transform: none;
+}
+
+.reveal h1,
+.reveal h2,
+.reveal h3 {
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+.reveal h1 {
+  max-width: 1020px;
+  margin-bottom: 34px;
+  font-size: 72px;
+  line-height: 1.05;
+}
+
+.reveal h1 span {
+  color: var(--accent);
+}
+
+.reveal h2 {
+  margin-bottom: 38px;
+  font-size: 48px;
+  line-height: 1.1;
+}
+
+.reveal h3 {
+  margin: 12px 0 10px;
+  font-size: 29px;
+}
 
 .reveal p {
-  margin-bottom: 1em;
-  line-height: 1.5;
-  font-size: 0.6em;
+  font-size: 24px;
+  line-height: 1.45;
 }
 
-.reveal ul, 
-.reveal ol {
-  display: inline-block;
-  text-align: left;
-  margin: 0 0 0 1em;
-  font-size: 0.6em;
-}
-
-.reveal li {
-  margin: 0.5em 0;
-  font-size: 1em; /* Keep relative size to parent ul/ol */
-}
-
-.reveal code {
-  background-color: #f0f0f0;
-  padding: 0.2em 0.4em;
-  border-radius: 3px;
-  font-family: monospace;
-  font-size: 0.6em;
-}
-
-/* Button styles */
-.reveal button {
-  background-color: var(--highlight-color);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  font-size: 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.reveal button:hover {
-  background-color: #3b77db;
-}
-
-.reveal button:active {
-  background-color: #2c5bb9;
-}
-
-/* Canvas styling */
-.canvas-container {
-  width: 80%;
-  height: 400px;
-  margin: 20px auto;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background-color: #fff;
-  box-shadow: var(--card-shadow);
-}
-
-/* Card styling for content */
-.card {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  margin: 20px auto;
-  max-width: 80%;
-  box-shadow: var(--card-shadow);
-}
-
-/* Module-specific styles */
-
-/* For slide2 - Interactive elements */
-.color-demo {
-  padding: 20px;
-  border-radius: 8px;
-  margin: 15px auto;
-  max-width: 80%;
-  text-align: center;
-  transition: color 0.5s ease;
-}
-
-/* For slide3 - Progressive reveal */
-.fragment.highlight-current-blue {
-  opacity: 1;
-  visibility: inherit;
-}
-
-.fragment.highlight-current-blue.current-fragment {
-  color: var(--highlight-color);
-  font-weight: bold;
-}
-
-.bonus-content {
-  background-color: rgba(66, 133, 244, 0.1);
-  border-left: 4px solid var(--highlight-color);
-  padding: 10px 20px;
-  margin-top: 30px;
-  border-radius: 0 4px 4px 0;
-}
-
-/* For slide4 - Chart styling */
-.chart-container {
-  width: 80%;
-  height: 350px;
-  margin: 0 auto;
-  position: relative;
-}
-
-/* For slide5 - Three.js content */
-#canvas-container {
-  width: 80%;
-  height: 350px;
-  margin: 20px auto;
-  position: relative;
-  background-color: #f0f0f0;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: var(--card-shadow);
-}
-
-.controls-container {
+.hero-slide {
   display: flex;
+  height: 100%;
+  flex-direction: column;
   justify-content: center;
-  gap: 10px;
-  margin: 10px 0;
 }
 
-/* For slide6 - Flowchart */
-.flowchart-container {
-  width: 80%;
-  height: 400px;
-  margin: 20px auto;
-  position: relative;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: var(--card-shadow);
-  padding: 20px;
+.hero-slide > p {
+  max-width: 850px;
+  color: var(--muted);
+  font-size: 27px;
 }
 
-.flowchart-node {
-  position: absolute;
-  background-color: white;
-  border: 2px solid var(--highlight-color);
-  border-radius: 8px;
-  padding: 10px 15px;
-  min-width: 100px;
+.eyebrow,
+.card-label {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.eyebrow {
+  margin-bottom: 22px;
+}
+
+.two-column {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 26px;
+}
+
+.comparison-card {
+  display: flex;
+  min-height: 350px;
+  flex-direction: column;
+  align-items: center;
+  padding: 28px 34px;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--surface);
   text-align: center;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  z-index: 10;
-  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.flowchart-node:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+.card-visual {
+  display: flex;
+  width: 100%;
+  height: 120px;
+  align-items: center;
+  justify-content: center;
+  margin: 18px 0 4px;
 }
 
-.flowchart-connection {
-  position: absolute;
-  z-index: 5;
+.card-visual img {
+  width: auto;
+  max-width: 150px;
+  max-height: 110px;
 }
 
-.flowchart-arrow {
-  fill: none;
-  stroke: var(--highlight-color);
-  stroke-width: 2;
-  marker-end: url(#arrowhead);
+.text-visual {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 34px;
+  letter-spacing: 0.15em;
 }
 
-/* Image slides - configured via data-background in JS modules */
-/* Clean up any legacy image styles */
+.comparison-card p {
+  max-width: 430px;
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 21px;
+}
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-  .canvas-container, 
-  .chart-container,
-  #canvas-container,
-  .flowchart-container {
-    width: 95%;
-    height: 300px;
+.thesis-line {
+  margin-top: 26px !important;
+  padding: 16px 22px;
+  border-left: 4px solid var(--accent);
+  background: var(--accent-tint);
+  color: var(--ink);
+  font-weight: 600;
+  text-align: center;
+}
+
+.process-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+  align-items: stretch;
+  gap: 12px;
+  margin-top: 76px;
+}
+
+.process-row > div {
+  display: flex;
+  min-height: 180px;
+  flex-direction: column;
+  justify-content: center;
+  padding: 22px;
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.process-row b,
+.process-row i {
+  color: var(--accent);
+}
+
+.process-row b {
+  font-family: var(--font-mono);
+  font-size: 18px;
+}
+
+.process-row strong {
+  margin: 13px 0 8px;
+  color: var(--ink);
+}
+
+.process-row span {
+  color: var(--muted);
+  font-size: 17px;
+}
+
+.process-row i {
+  align-self: center;
+  font-style: normal;
+}
+
+.interactive-panel {
+  display: flex;
+  min-height: 260px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.reveal button {
+  padding: 12px 22px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--canvas);
+  font: 600 18px var(--font-sans);
+  cursor: pointer;
+}
+
+.reveal button:focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 4px;
+}
+
+@media (max-width: 800px) {
+  .reveal .slides section {
+    padding: 42px;
   }
-  
-  .card {
-    max-width: 95%;
-    padding: 15px;
+
+  .two-column {
+    grid-template-columns: 1fr;
   }
-} 
+}
