@@ -3,8 +3,8 @@ name: presentation
 description: >-
   Creates presentation slide decks for AI agents. Defaults to image-generated
   full-slide visuals (outline_visual.md, visual_guideline.md, Reveal.js viewer).
-  Falls back to HTML/JS module decks when the user requests no image generation,
-  editable HTML, or interactive slides. Use for slide decks, keynotes, teaching
+  Also creates DOM-composed Reveal.js decks with optional generated icons and
+  diagrams when exact text, editable HTML, or interaction matters. Use for slide decks, keynotes, teaching
   decks, speaker notes, or presentation scaffolds.
 ---
 
@@ -16,11 +16,11 @@ Deliver a previewable slide deck directory where every slide advances one concre
 
 ## Boundaries
 
-**In scope:** deck planning, visual direction, image-rendered slides, HTML/JS module slides, speaker notes, local preview via Reveal.js.
+**In scope:** deck planning, visual direction, image-rendered slides, DOM-composed Reveal.js slides, local generated assets, speaker notes, local preview via Reveal.js.
 
 **Out of scope:** PPTX editing, generic image prompting, design review checklists. Image API calls belong to the installing workspace (often `image-generation-skill`), not this repo.
 
-**Mode rule:** Default to **image** mode. Switch to **html** only when the user explicitly asks (e.g. "HTML only", "no image generation", "editable HTML", "interactive deck"). Never silently downgrade image → html when rendering fails.
+**Mode rule:** Default to **image** mode. Select **reveal** when the user asks for exact/editable HTML, code, live data, links, progressive interaction, or no full-slide generation. Rendering mode and asset policy are independent: a Reveal deck may use generated icons or diagrams; "no image generation" means `reveal` + `assets: none`. Never silently downgrade image → reveal when rendering fails.
 
 ## Acceptance criteria
 
@@ -46,10 +46,11 @@ A deck is **done** when all of the following hold. If any fail, the task is not 
 - Logos, QR codes, screenshots, and tables use real assets under `imgs/` — never ask the image model to invent them.
 - On-slide text is legible; garbled text is a failure (simplify copy, re-render, or overlay exact text in HTML/CSS).
 
-**HTML mode**
+**Reveal mode**
 
-- One module per slide under `js/slides/`; each exports `render`, `initialize`, `cleanup` per `js/slideModule.js`.
-- Slide IDs in `index.html` match the `slideIds` array; leaving a slide cleans up timers, listeners, charts, and WebGL.
+- Exact copy, numbers, links, and layout remain in the DOM; generated assets do not redraw content that must be exact.
+- Static slides may share a deck registry. Only slides with listeners, timers, charts, or WebGL need modules with `initialize` and `cleanup`.
+- Generated icons and diagrams follow [generated_assets.md](generated_assets.md): shared visual grammar, transparent output, stable `.card-visual` containers, and post-generation checks.
 
 **Cross-mode awareness**
 
@@ -61,7 +62,8 @@ A deck is **done** when all of the following hold. If any fail, the task is not 
 
 ```bash
 bash scripts/presentation-skill "Topic" --mode image --output deck_work
-bash scripts/presentation-skill "Topic" --request "HTML only" --output deck_work
+bash scripts/presentation-skill "Topic" --mode reveal --assets mixed --output deck_work
+bash scripts/presentation-skill "Topic" --request "HTML only, no image generation" --output deck_work
 ```
 
 **PDF export (image decks — the default way to produce the distribution PDF)**
@@ -98,7 +100,7 @@ When a slide needs navbar + logo + chart (or QR), list all assets in `outline_vi
 | Mode | Root artifacts |
 |------|----------------|
 | image | `outline_visual.md`, `visual_guideline.md`, `generated_slides/`, `tools/`, image `index.html` |
-| html | `index.html`, `js/slides/*.js`, `js/slideModule.js` |
+| reveal | `index.html`, `js/deck.js`, optional `js/slides/*.js`, `imgs/`, `visual_guideline.md` |
 
 ## Methodology (suggestions, not mandatory order)
 
@@ -106,7 +108,8 @@ When a slide needs navbar + logo + chart (or QR), list all assets in `outline_vi
 - For direct-read scripts or substantial speaker-note revisions, load [speaker_notes.md](speaker_notes.md). It defines the breath test, transition handoffs, factual-fidelity gate, and long-deck batch review.
 - Image decks: unify style through `visual_guideline.md` + shared style reference assets; render only after outline text is locked.
 - Text-heavy image slides: keep title regions wide, cap visible labels, and explicitly require normal-width typography. Long text in a narrow column often makes image models fake a condensed font or horizontally squeeze letters.
-- HTML decks: keep slide state local; treat `examples/html/js/slides/title.js` as the module contract reference.
+- Reveal decks: use the deck registry for static slides and keep interactive state local; read [reveal_decks.md](reveal_decks.md).
+- In Reveal mode, use generated assets only when they explain or distinguish; whitespace alone is not a reason to add decoration.
 - Prefer the workspace image-generation skill when available.
 - Image decks that show URLs/QRs or embed live artifacts: add a clickable HTML overlay layer per [docs/clickable_overlays.md](../docs/clickable_overlays.md) — prompt the zone, measure the rendered element's bbox by vision, inject padded `<a>`/iframe hotzones, verify with a draw-back check.
 
@@ -116,11 +119,12 @@ When a slide needs navbar + logo + chart (or QR), list all assets in `outline_vi
 |------|-----------------|------------|
 | Wrong install path | Agent reads a stale `.agents/skills/` or injected path that does not exist | Follow the installing workspace's skill index / `WORKSPACE.md`. Canonical repo skill: `skills/skill_presentation.md` in the `presentation_skill` package. |
 | Treating Python helpers as an AI planner | Expecting `deck_plan.py` or CLI to generate slide content | Python only scaffolds directories and encodes validation rules. The agent writes `deck_plan.md`, outlines, and modules. |
-| Silent mode downgrade | Image API fails → agent switches to HTML without asking | Stop; state the blocker; keep source artifacts complete; switch modes only if the user allows. |
+| Silent mode downgrade | Image API fails → agent switches to Reveal without asking | Stop; state the blocker; keep source artifacts complete; switch modes only if the user allows. |
 | Model-invented text | QR codes that don't scan, alien glyphs, hallucinated logos | Put exact pixels in `imgs/` and inject via outline Asset sections; specify exact readable copy in prompts. |
 | Internal constraints painted onto slides | Prompt says "no private numbers" or "public data only" and the rendered slide visibly includes that caveat | Separate rules from visible copy. Phrase constraints as "Do not render any text about X" and enumerate the exact visible headings/labels the model may draw. |
 | Horizontally squeezed typography | Long titles or card text look narrow/condensed, especially inside a fixed left column | Shorten the visible phrase, give the title full width, and add: "Use normal-width Inter or Helvetica-style sans-serif, not condensed. Do not horizontally scale or compress letters; reduce font size or wrap at word boundaries." If it persists, move exact text to an HTML/CSS overlay. |
-| Mixing paradigms on one slide | Editing JS modules for a slide that should be a rendered JPG (or vice versa) | Pick one mode per slide; use html mode only for slides that need live interaction. |
+| Confusing composition with assets | A Reveal slide is treated as image mode because it contains a generated icon | Pick one composition owner per slide. Reveal owns geometry and exact copy; local image assets may still support it. |
+| Decorative asset filling | Empty space triggers unrelated icons that compete with the claim | Add an asset only when it accelerates scanning, distinguishes peers, or explains a mechanism. |
 | Skipping examples | New slides drift from the scaffold contract | Read root scaffold + `examples/` before writing; adapt from those patterns. |
 | Preview without server | Opening `index.html` as `file://` breaks modules/CDN | Use `start-server.py`; pick a free port if defaults are taken. |
 | English/Mixed Prompts in Chinese Decks | Mixing English and Chinese in MJ/DALL-E prompts for Chinese slides | Use **100% pure Chinese prompts** (excluding standard CLI parameters like `--ar 16:9`). Any English keywords (e.g. "vs", "chart", "mockup") trigger the image model to draw garbled, meaningless English glyphs on the slide background. |
@@ -137,5 +141,7 @@ When a slide needs navbar + logo + chart (or QR), list all assets in `outline_vi
 ## Additional resources
 
 - Detailed contracts, scaffold layout, installation: [reference.md](reference.md)
+- Reveal composition and lifecycle: [reveal_decks.md](reveal_decks.md)
+- Generated icons and diagrams: [generated_assets.md](generated_assets.md)
 - Direct-read scripts and spoken delivery: [speaker_notes.md](speaker_notes.md)
 - Clickable links / live-artifact embeds on image slides: [docs/clickable_overlays.md](../docs/clickable_overlays.md)

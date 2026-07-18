@@ -4,7 +4,7 @@ import os
 import shutil
 from pathlib import Path
 
-from .deck_plan import DeckMode
+from .deck_plan import AssetPolicy, DeckMode
 
 
 def _template_root() -> Path:
@@ -34,9 +34,17 @@ def _get_all_files(target_dir: Path) -> list[Path]:
     return written
 
 
-def _write_deck_plan(target_dir: Path, topic: str, mode: DeckMode) -> None:
+def _write_deck_plan(
+    target_dir: Path,
+    topic: str,
+    mode: DeckMode,
+    asset_policy: AssetPolicy,
+) -> None:
     (target_dir / "deck_plan.md").write_text(
-        f"# Presentation Deck Plan: {topic}\n\nMode: {mode.value}\n\n## Slide Plan\n\n",
+        f"# Presentation Deck Plan: {topic}\n\n"
+        f"Mode: {mode.value}\n"
+        f"Asset policy: {asset_policy.value}\n\n"
+        "## Slide Plan\n\n",
         encoding="utf-8",
     )
 
@@ -47,7 +55,11 @@ def _write_deck_readme(target_dir: Path) -> None:
         shutil.copy2(bootstrap_readme, target_dir / "README.md")
 
 
-def write_image_mode_starter(target_dir: Path, topic: str) -> list[Path]:
+def write_image_mode_starter(
+    target_dir: Path,
+    topic: str,
+    asset_policy: AssetPolicy = AssetPolicy.GENERATED,
+) -> list[Path]:
     template_root = _template_root()
     target_dir.mkdir(parents=True, exist_ok=True)
 
@@ -55,13 +67,17 @@ def write_image_mode_starter(target_dir: Path, topic: str) -> list[Path]:
     _copy_template_dir(template_root / "examples" / "image", target_dir)
     _copy_template_dir(template_root / "examples" / "html", target_dir / "examples" / "html")
 
-    _write_deck_plan(target_dir, topic, DeckMode.IMAGE)
+    _write_deck_plan(target_dir, topic, DeckMode.IMAGE, asset_policy)
     _write_deck_readme(target_dir)
 
     return _get_all_files(target_dir)
 
 
-def write_html_mode_starter(target_dir: Path, topic: str) -> list[Path]:
+def write_reveal_mode_starter(
+    target_dir: Path,
+    topic: str,
+    asset_policy: AssetPolicy = AssetPolicy.MIXED,
+) -> list[Path]:
     template_root = _template_root()
     target_dir.mkdir(parents=True, exist_ok=True)
 
@@ -69,7 +85,16 @@ def write_html_mode_starter(target_dir: Path, topic: str) -> list[Path]:
     _copy_template_dir(template_root / "examples" / "html", target_dir)
     _copy_template_dir(template_root / "examples" / "image", target_dir / "examples" / "image")
 
-    _write_deck_plan(target_dir, topic, DeckMode.HTML)
+    _write_deck_plan(target_dir, topic, DeckMode.REVEAL, asset_policy)
     _write_deck_readme(target_dir)
 
     return _get_all_files(target_dir)
+
+
+def write_html_mode_starter(
+    target_dir: Path,
+    topic: str,
+    asset_policy: AssetPolicy = AssetPolicy.MIXED,
+) -> list[Path]:
+    """Compatibility wrapper for the former HTML mode name."""
+    return write_reveal_mode_starter(target_dir, topic, asset_policy)
