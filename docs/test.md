@@ -10,7 +10,7 @@ Command:
 
 ```bash
 uv venv .venv
-uv pip install --python .venv/bin/python -e '.[dev]'  # dev extra includes img2pdf + pypdf for export tests
+uv pip install --python .venv/bin/python -e '.[dev]'  # dev includes PDF and Pillow asset-test dependencies
 .venv/bin/python -m pytest -v
 ```
 
@@ -18,7 +18,8 @@ uv pip install --python .venv/bin/python -e '.[dev]'  # dev extra includes img2p
 
 Covers `deck_plan.py`:
 
-- `choose_mode()` defaults to image; explicit HTML phrases select html mode
+- `choose_mode()` defaults to image; exact/editable/interactive phrases select Reveal mode
+- `choose_asset_policy()` separates generated, exact, mixed, and no-asset requests from rendering mode
 - `validate_deck_plan()` catches empty plans, duplicate slide numbers, non-sequential numbering, missing titles, short claims/visual roles
 - `build_deck_plan()` renders expected markdown and raises on invalid input
 
@@ -28,13 +29,22 @@ Covers end-to-end CLI via `scripts/presentation-skill`:
 
 - `--help` renders
 - `--mode image` creates root image deck + `examples/html/` + `README.md`
-- `--mode html` creates root HTML deck + `examples/image/` + sample JPEG fixture
+- `--mode reveal` creates a registry-based Reveal deck + generated-icon fixture + `examples/image/`
+- `--mode html` remains a Reveal compatibility alias
+
+### `tests/test_asset_prep.py`
+
+Covers offline generated-asset normalization:
+
+- dark-background alpha extraction and exact tinting
+- tight and square crop behavior
+- invalid threshold rejection
 
 ### `tests/test_public_contract.py`
 
 Covers repo invariants:
 
-- Exactly one root skill file (`skill_presentation.md`); `reference.md` and `speaker_notes.md` are supporting docs only
+- Exactly one root skill file (`skill_presentation.md`); the remaining files under `skills/` are supporting docs only
 - Required docs exist (`prd.md`, `rfc.md`, `working.md`, `test.md`)
 - No legacy large artifacts at repo root
 - README points to root skill and public GitHub URL

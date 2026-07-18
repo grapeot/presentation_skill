@@ -4,7 +4,7 @@ This directory was initialized by `presentation-skill`. The **active deck** live
 
 ## Active mode
 
-Check `deck_plan.md` for the selected mode (`image` or `html`).
+Check `deck_plan.md` for the selected rendering mode (`image` or `reveal`) and its independent asset policy (`none`, `generated`, `exact`, or `mixed`).
 
 ## Preview locally
 
@@ -26,14 +26,15 @@ Open `http://localhost:8765`. Use a port other than 8000 if that port is occupie
 
 See `examples/image/` for a complete reference deck (same layout as the root when mode is image).
 
-## HTML module mode workflow
+## Reveal mode workflow
 
-1. Add or edit one file per slide under `js/slides/`.
-2. Register slide IDs in `index.html` (`slideIds` array and empty `<section id="...">` placeholders).
-3. Each module exports `render`, `initialize`, and `cleanup` (see `js/slideModule.js` and `examples/html/js/slides/title.js`).
-4. Preview with `start-server.py` as above.
+1. Keep static slide markup in `js/deck.js` and exact copy/layout in the DOM.
+2. Use `js/slides/` modules only for slides with listeners, timers, charts, or WebGL; each exports `initialize` and `cleanup`.
+3. Put exact and generated local assets under `imgs/`; align peer visuals through a shared `.card-visual` container.
+4. Use `presentation-skill prepare-asset` to normalize generated line art when transparent PNG output is needed.
+5. Preview with `start-server.py` as above.
 
-See `examples/html/` for a complete reference deck with Chart.js, Three.js, and progressive reveals.
+See `examples/html/` for the Reveal reference deck. The directory keeps its legacy physical name for compatibility.
 
 ## Before changing slides
 

@@ -7,7 +7,7 @@ This repository packages a public-safe presentation creation skill for AI coding
 The skill unifies two presentation modes:
 
 - Image-generated decks by default: the agent writes a deck plan, visual direction, and per-slide prompts, then uses the installing workspace's image generation capability to render full-slide images.
-- HTML module decks as fallback: when the user explicitly asks not to use image generation, the agent creates a Reveal.js-style HTML deck with one module per slide.
+- Reveal.js decks as a first-class alternative: exact content and composition stay in the DOM, while generated icons and diagrams may be used as bounded local assets. Static slides share a deck registry; only interactive slides need lifecycle modules.
 
 ## Working Environment
 
@@ -28,10 +28,11 @@ The default test suite must stay offline. Do not add live image-generation tests
 
 - `starter.py` — CLI template copy and scaffold generation
 - `deck_plan.py` — mode selection and deck-plan validation contract (testable spec, not an AI planner)
+- `asset_prep.py` — deterministic alpha extraction, recoloring, and cropping for generated local assets
 
 It must not call external image APIs directly. Image generation belongs to the installing workspace, commonly through an image-generation skill or another user-configured tool.
 
-`skills/skill_presentation.md` is the only root skill exposed by this repo. `skills/reference.md` and `skills/speaker_notes.md` are progressive-disclosure support, not additional root skills.
+`skills/skill_presentation.md` is the only root skill exposed by this repo. Other Markdown files under `skills/` are progressive-disclosure support, not additional root skills.
 
 ## Public Safety
 

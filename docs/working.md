@@ -2,6 +2,16 @@
 
 ## Changelog
 
+### 2026-07-18
+
+- Reframed HTML fallback as first-class Reveal mode and separated rendering mode from local asset policy (`none`, `generated`, `exact`, `mixed`).
+- Kept `--mode html` and `write_html_mode_starter()` as compatibility aliases while new plans emit `Mode: reveal`.
+- Replaced the legacy all-modules HTML example with a static deck registry plus one lifecycle-managed interactive module.
+- Added a public-safe transparent CPU blueprint fixture and card-visual example inspired by a production teaching deck without copying its course content.
+- Added `skills/reveal_decks.md` and `skills/generated_assets.md` as progressive-disclosure contracts.
+- Added provider-neutral `prepare-asset` alpha extraction, tint, and crop tooling with offline Pillow tests.
+- Verified `.venv/bin/python -m pytest -v` (40 passed), checked both new JavaScript modules with `node --check`, and found no private paths or live credentials beyond documented fake `.env.example` placeholders.
+
 ### 2026-07-16
 
 - Added a podium test to the speaker-notes contract: every paragraph must sound natural when addressed to a room, not merely read well in a memo.

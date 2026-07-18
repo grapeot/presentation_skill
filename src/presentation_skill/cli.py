@@ -4,23 +4,29 @@ import argparse
 import sys
 from pathlib import Path
 
-from .deck_plan import choose_mode
-from .starter import write_html_mode_starter, write_image_mode_starter
+from .deck_plan import AssetPolicy, DeckMode, choose_asset_policy, choose_mode
+from .starter import write_image_mode_starter, write_reveal_mode_starter
 
-_SUBCOMMANDS = {"init", "export-pdf"}
+_SUBCOMMANDS = {"init", "export-pdf", "prepare-asset"}
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="presentation-skill",
-        description="Presentation Skill helpers: scaffold decks, export image decks to PDF",
+        description="Presentation Skill helpers: scaffold decks, prepare assets, export image decks to PDF",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
     init = sub.add_parser("init", help="Create starter artifacts for a new deck")
     init.add_argument("topic", help="Presentation topic")
     init.add_argument("--request", default="", help="Original user request used to choose default mode")
-    init.add_argument("--mode", choices=["auto", "image", "html"], default="auto")
+    init.add_argument("--mode", choices=["auto", "image", "reveal", "html"], default="auto")
+    init.add_argument(
+        "--assets",
+        choices=["auto", "none", "generated", "exact", "mixed"],
+        default="auto",
+        help="Local asset policy, independent of slide rendering mode",
+    )
     init.add_argument("--output", default="presentation_deck", help="Output directory")
 
     export = sub.add_parser(
@@ -35,18 +41,53 @@ def build_parser() -> argparse.ArgumentParser:
         help="Run the compatibility check and exit without writing a PDF",
     )
 
+    asset = sub.add_parser(
+        "prepare-asset",
+        help="Convert a generated icon or diagram into a tinted transparent PNG",
+    )
+    asset.add_argument("input", help="Source image")
+    asset.add_argument("output", help="Output PNG")
+    asset.add_argument("--target-color", required=True, help="Output foreground color, e.g. #D6A24B")
+    asset.add_argument("--background", choices=["dark", "light"], default="dark")
+    asset.add_argument("--low", type=int, default=40, help="Background-side luminance threshold")
+    asset.add_argument("--high", type=int, default=100, help="Foreground-side luminance threshold")
+    asset.add_argument("--padding", type=int, default=24)
+    asset.add_argument("--crop", choices=["tight", "square", "none"], default="tight")
+
     return parser
 
 
 def _run_init(args: argparse.Namespace) -> int:
-    mode = choose_mode(args.request or args.topic).value if args.mode == "auto" else args.mode
-    target = Path(args.output)
-    if mode == "image":
-        written = write_image_mode_starter(target, args.topic)
+    request = args.request or args.topic
+    if args.mode == "auto":
+        mode = choose_mode(request)
     else:
-        written = write_html_mode_starter(target, args.topic)
+        mode = DeckMode.REVEAL if args.mode == "html" else DeckMode(args.mode)
+    policy = choose_asset_policy(request, mode) if args.assets == "auto" else AssetPolicy(args.assets)
+    target = Path(args.output)
+    if mode == DeckMode.IMAGE:
+        written = write_image_mode_starter(target, args.topic, policy)
+    else:
+        written = write_reveal_mode_starter(target, args.topic, policy)
     for path in written:
         print(path)
+    return 0
+
+
+def _run_prepare_asset(args: argparse.Namespace) -> int:
+    from .asset_prep import prepare_asset
+
+    output = prepare_asset(
+        Path(args.input),
+        Path(args.output),
+        target_color=args.target_color,
+        background=args.background,
+        low=args.low,
+        high=args.high,
+        padding=args.padding,
+        crop=args.crop,
+    )
+    print(output)
     return 0
 
 
@@ -83,6 +124,8 @@ def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.command == "init":
         return _run_init(args)
+    if args.command == "prepare-asset":
+        return _run_prepare_asset(args)
     return _run_export_pdf(args)
 
 
