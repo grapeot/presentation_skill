@@ -98,3 +98,13 @@ Legacy repos may be referenced for historical examples. This repo vendors a trim
 ## PDF Export Decision (2026-07)
 
 Browser `?print-pdf` proved lossy for image decks: it rewrites overlay links to the visible pill text (404s) and mis-sizes pages unless Reveal is configured just so. Since a compatible image deck is fully described by (ordered background images, overlay-data JSON), the export path builds the PDF from those two inputs directly: `img2pdf` for lossless page embedding, `pypdf` for `/Link` annotations at the same fractional rects (+1.5% pad) the HTML overlay layer uses. The compatibility check is a hard gate, not a warning: a section carrying any visible content beyond background + notes fails the export, because that content would silently vanish from the PDF. Dependencies stay out of the core install as the `[pdf]` extra.
+
+## Image Backend Update (2026-09)
+
+The copied image-deck `tools/` template targeted `gpt-image-2`. OpenAI's current API model is the GPT Image 2.5 family, which changes three things the template depended on:
+
+1. **Two variants at the same token price.** `gpt-image-2.5-flare` is speed-first, `gpt-image-2.5-sunburst` is precision-first. The template picks by render intent: fast 1K drafts use flare, final 2K/4K renders use sunburst, with a `--variant auto|flare|sunburst` override. This keeps the cheap path fast without giving up edit precision on final assets.
+2. **A finer quality scale.** 2.5 adds `xhigh` and `max` and defaults to `auto`. Measured at 1024×1024, 2.5 `high` spends about a quarter of GPT Image 2 `high`, and 2.5 `max` matches the old `high`. The template default moves from `low` to `auto`; explicit tiers remain available.
+3. **Native multi-image input.** GPT Image 2.5 accepts multiple input images in one `images.edit` call, so the Pillow vertical-stacking workaround that existed only to satisfy a one-input limit is removed. `Asset` paths are passed straight through.
+
+The response shape is unchanged from `gpt-image-2` (same top-level keys, same `data[i]` keys), so downstream parsing needs no change. Verified live during the upgrade; see `docs/working.md`.

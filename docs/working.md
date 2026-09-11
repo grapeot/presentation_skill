@@ -7,7 +7,9 @@
 - Upgraded the OpenAI image backend from `gpt-image-2` to the GPT Image 2.5 family. Two variants at the same price: `gpt-image-2.5-flare` (speed-first) and `gpt-image-2.5-sunburst` (precision-first). Variant defaults to size (`1K -> flare`, `2K/4K -> sunburst`) with a `--variant auto|flare|sunburst` override.
 - Changed the default quality tier from `low` to `auto`, and expanded `--quality` to `low|medium|high|xhigh|max|auto` (2.5 adds `xhigh`/`max`). 2.5's quality scale is finer: 2.5 `high` costs roughly a quarter of GPT Image 2 `high`, and 2.5 `max` matches the old `high` spend.
 - Removed the multi-asset Pillow stacking workaround: GPT Image 2.5 accepts multiple input images in one `images.edit` call, so `generate_slides.py` now passes every `Asset` path straight through. Updated `skills/skill_presentation.md` and `skills/reference.md` to document the two variants, the size mapping, and native multi-image input.
-- Verified offline test suite (`.venv/bin/python -m pytest -q`) and validated variant resolution, parser defaults, and model-id pass-through with a stubbed harness; the template tools require the deck's own runtime deps and are not imported by the package.
+- Added `tests/test_generate_slides.py` (7 offline tests) covering variant resolution and overrides, parser defaults, the expanded quality tiers, `auto` default, size→variant flow, and multi-asset pass-through with no stacking.
+- Updated `docs/prd.md` (image-backend requirements + test count), `docs/rfc.md` (image backend decision record), and `docs/test.md` (new test module).
+- Verified offline test suite (`.venv/bin/python -m pytest -q`, 47 passed) and validated variant resolution, parser defaults, and model-id pass-through with a stubbed harness; the template tools require the deck's own runtime deps and are not imported by the package.
 
 ### 2026-07-18
 
