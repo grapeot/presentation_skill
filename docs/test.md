@@ -53,6 +53,15 @@ Covers repo invariants:
 
 None in v1. Deck-level `tools/generate_slides.py` calls workspace image APIs; that path is validated manually in a scaffolded deck with real credentials outside CI.
 
+### `tests/test_generate_slides.py`
+
+Covers the image-deck generator template (`templates/examples/image/tools/generate_slides.py`) offline, with the deck runtime backends stubbed:
+
+- variant resolution follows size (`1K → flare`, `2K/4K → sunburst`) and honors the `--variant` override; Gemini yields no variant
+- parser defaults (`model=gpt`, `variant=auto`) and all 2.5 quality tiers (`low|medium|high|xhigh|max|auto`), with an unknown tier rejected
+- default quality resolves to `auto`, and a `--size 1K` override flows into the variant
+- `generate_slide()` forwards every `Asset` path and the resolved model id to the OpenAI backend and writes no `stacked_assets_*` file
+
 ## Manual validation before push
 
 Checklist:

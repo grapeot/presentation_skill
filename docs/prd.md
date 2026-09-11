@@ -34,6 +34,12 @@ Agents lack a single, opinionated contract for presentation decks. Legacy repos 
 - Active mode lands at deck root; the other mode lands under `examples/` for cross-reference.
 - Every scaffold includes `README.md` with preview and generation steps.
 
+### Image backend (OpenAI)
+
+- The copied image-deck `tools/` template targets the GPT Image 2.5 family: `gpt-image-2.5-flare` (speed-first) and `gpt-image-2.5-sunburst` (precision-first), both at the same price.
+- Variant defaults to size (`1K → flare`, `2K/4K → sunburst`) with a `--variant auto|flare|sunburst` override; quality defaults to `auto` and accepts `low|medium|high|xhigh|max|auto`.
+- Multiple `Asset` images are passed to a single `images.edit` call; the template does not stack or composite references.
+
 ### PDF export (image decks)
 
 - `presentation-skill export-pdf <deck_dir>` builds the distribution PDF directly from the slide images — no browser printing.
@@ -62,7 +68,7 @@ Agents lack a single, opinionated contract for presentation decks. Legacy repos 
 ## Success Criteria
 
 - A fresh agent can install the skill, run the CLI, preview a deck with `start-server.py`, and know when a deck is complete.
-- Offline tests pass without API keys (`pytest -v`, currently 40 tests).
+- Offline tests pass without API keys (`pytest -v`, currently 47 tests).
 - Privacy scan finds no real credentials or private workspace references.
 - PR #2 merges with consolidated templates and updated skill docs.
 
