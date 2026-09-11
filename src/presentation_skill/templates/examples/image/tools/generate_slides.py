@@ -15,8 +15,16 @@ else:
 
 # Model-aware defaults
 DEFAULT_SIZES = {"gemini": "1K", "gpt": "4K"}
-DEFAULT_QUALITY = "low"  # only used by gpt-image-2
+DEFAULT_QUALITY = "auto"  # gpt-image-2.5 only; Gemini ignores it
 DEFAULT_PARALLELISM = {"gemini": 4, "gpt": 8}
+
+# GPT Image 2.5 ships as two variants at the same price. Speed-first is the
+# default for fast 1K drafts; precision-first is the default for final 2K/4K.
+OPENAI_VARIANT_MODELS = {
+    "flare": "gpt-image-2.5-flare",
+    "sunburst": "gpt-image-2.5-sunburst",
+}
+DEFAULT_VARIANT_BY_SIZE = {"1K": "flare", "2K": "sunburst", "4K": "sunburst"}
 
 
 def parse_slides(outline_path, start_slide=1, end_slide=19, specific_slides=None):
@@ -115,34 +123,11 @@ def build_prompt(slide, guideline, project_root):
 
 def generate_slide(slide, guideline, output_dir, project_root, *,
                    model: str, image_size: str, quality: str,
+                   openai_model_id: str = "gpt-image-2.5-sunburst",
                    filename_suffix: str = ""):
     print(f"Starting generation for Slide {slide['number']} (model={model}, size={image_size}, quality={quality})...")
 
     prompt, image_inputs = build_prompt(slide, guideline, project_root)
-    
-    # Handle multiple input images by stacking them vertically
-    if len(image_inputs) > 1:
-        print(f"  Warning: Model {model} only supports at most one input image. Stacking {len(image_inputs)} images...")
-        try:
-            from PIL import Image
-            images = [Image.open(p) for p in image_inputs]
-            max_width = max(img.width for img in images)
-            total_height = sum(img.height for img in images)
-            
-            # White background
-            stacked_img = Image.new('RGB', (max_width, total_height), (255, 255, 255))
-            current_y = 0
-            for img in images:
-                x_offset = (max_width - img.width) // 2
-                stacked_img.paste(img, (x_offset, current_y))
-                current_y += img.height
-                
-            stacked_path = os.path.join(str(output_dir), f"stacked_assets_slide_{slide['number']}.png")
-            stacked_img.save(stacked_path)
-            print(f"  Stacked input assets saved to: {stacked_path}")
-            image_inputs = [stacked_path]
-        except Exception as e:
-            print(f"  Error stacking images for Slide {slide['number']}: {e}")
 
     for asset in image_inputs:
         print(f"  Using asset: {asset}")
@@ -167,12 +152,24 @@ def generate_slide(slide, guideline, output_dir, project_root, *,
                 image_size=image_size,
                 aspect_ratio="16:9",
                 quality=quality,
+                model_id=openai_model_id,
             )
         else:
             raise ValueError(f"Unknown model: {model}")
         print(f"Finished Slide {slide['number']}")
     except Exception as e:
         print(f"Error generating Slide {slide['number']}: {e}")
+
+
+def _resolve_variant(model, size, override):
+    """Return the OpenAI model id for the selected variant, or None for Gemini.
+
+    `override` is "auto" (or empty) to follow the size mapping, otherwise
+    "flare" or "sunburst"."""
+    if model != "gpt":
+        return None
+    variant = override if override and override != "auto" else DEFAULT_VARIANT_BY_SIZE[size]
+    return OPENAI_VARIANT_MODELS[variant]
 
 
 def _resolve_defaults(args):
@@ -187,7 +184,7 @@ def _resolve_defaults(args):
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Generate slides")
     parser.add_argument("--enlarge", action="store_true",
-                        help="Enlarge existing slides to 4K (Gemini only — gpt-image-2 "
+                        help="Enlarge existing slides to 4K (Gemini only — gpt-image-2.5 "
                              "already renders 4K natively)")
     parser.add_argument("--slides", type=int, nargs="+",
                         help="Specific slide numbers to process (e.g., --slides 8 11)")
@@ -196,9 +193,15 @@ def build_parser() -> argparse.ArgumentParser:
                              "fully supported; pass --model gemini to use it.")
     parser.add_argument("--size", choices=["1K", "2K", "4K"],
                         help="Image size (default: 4K for gpt, 1K for gemini)")
-    parser.add_argument("--quality", choices=["low", "medium", "high"],
-                        help="Quality tier for gpt-image-2 only (default: low). "
+    parser.add_argument("--quality",
+                        choices=["low", "medium", "high", "xhigh", "max", "auto"],
+                        help="Quality tier for gpt-image-2.5 only (default: auto). "
                              "Ignored for gemini.")
+    parser.add_argument("--variant", choices=["auto", "flare", "sunburst"],
+                        default="auto",
+                        help="GPT Image 2.5 variant: flare = speed-first, "
+                             "sunburst = precision-first. Default auto follows "
+                             "size (1K -> flare, 2K/4K -> sunburst).")
     parser.add_argument("--filename-suffix", default="",
                         help='Suffix appended after slide_NN, before _<index>.jpg '
                              '(e.g. "_gpt_low" → slide_03_gpt_low_0.jpg)')
@@ -226,7 +229,7 @@ def main():
         if args.model != "gemini":
             print(
                 "--enlarge is only supported with --model gemini; "
-                "gpt-image-2 generates the final resolution directly, no upscale needed.",
+                "gpt-image-2.5 generates the final resolution directly, no upscale needed.",
                 file=sys.stderr,
             )
             sys.exit(2)
@@ -285,6 +288,7 @@ def main():
         guideline = f.read()
 
     model, size, quality, max_workers = _resolve_defaults(args)
+    openai_model_id = _resolve_variant(model, size, args.variant)
 
     specific_slides = args.slides if args.slides else None
     if not specific_slides:
@@ -292,14 +296,16 @@ def main():
     else:
         slides = parse_slides(str(outline_path), specific_slides=specific_slides)
 
+    model_label = openai_model_id or model
     print(f"Found {len(slides)} slides to generate. "
-          f"(model={model}, size={size}, quality={quality}, parallelism={max_workers})")
+          f"(model={model_label}, size={size}, quality={quality}, parallelism={max_workers})")
 
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
         futures = [
             executor.submit(
                 generate_slide, slide, guideline, output_dir, project_root,
                 model=model, image_size=size, quality=quality,
+                openai_model_id=openai_model_id or "gpt-image-2.5-sunburst",
                 filename_suffix=args.filename_suffix,
             )
             for slide in slides

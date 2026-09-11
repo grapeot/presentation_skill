@@ -20,17 +20,23 @@ Produce before rendering:
 
 Put generated files under `generated_slides/` or `output/`. Do not copy API keys into prompts or docs.
 
-### Multiple reference assets with gpt-image-2
+### Multiple reference assets with GPT Image 2.5
 
-OpenAI `gpt-image-2` accepts **at most one** input image per call. Slides often need more than one exact pixel reference — e.g. a navbar style sheet, a logo, and a QR code on the same closing slide.
+GPT Image 2.5 accepts **multiple** input images in one call, so slides can reference several exact pixels — a navbar style sheet, a logo, and a QR code on the same closing slide — without preprocessing.
 
-**Generator behavior:** When an outline slide lists multiple paths under `Asset`, `tools/generate_slides.py` vertically stacks them (Pillow, white background, top-to-bottom in list order) into `stacked_assets_slide_N.png` under the output directory, then sends that composite as the sole reference image.
+**Generator behavior:** When an outline slide lists multiple paths under `Asset`, `tools/generate_slides.py` passes them all to `client.images.edit` in list order. No stacking or compositing is performed.
 
 **Outline + prompt contract:**
 
-1. List every required asset under `Asset`, in the order they should appear in the stack (first = top).
-2. In the slide **提示词**, explicitly map stack regions to slide placement — e.g. 「参考叠加 Asset 自上而下依次为：导航条样式、Logo、二维码；导航条贴顶左对齐，Logo 居中于标题区上方，二维码嵌入右侧卡片」.
-3. Do not omit navbar reference assets just to stay under one file; stacking preserves format fidelity without sacrificing logo/QR accuracy.
+1. List every required asset under `Asset`, in the order they should be considered.
+2. In the slide **提示词**, name each asset and its slide placement — e.g. 「导航条贴顶左对齐，Logo 居中于标题区上方，二维码嵌入右侧卡片」.
+3. Do not omit reference assets; the model can use all of them in one call.
+
+**Model variants and quality:**
+
+- `gpt-image-2.5-flare` — speed-first; default at 1K.
+- `gpt-image-2.5-sunburst` — precision-first; default at 2K/4K.
+- Override the variant with `--variant flare|sunburst` (`auto` follows size). Quality defaults to `auto`; pin it with `--quality low|medium|high|xhigh|max|auto`. The 2.5 quality scale is finer than GPT Image 2's: 2.5 `high` costs roughly a quarter of GPT Image 2 `high`, and 2.5 `max` matches the old `high` spend.
 
 **Draft vs final renders:** Use `--output-dir generated_slides_4k` (or similar) for final-quality batches; point `index.html` `data-background` at the chosen directory.
 

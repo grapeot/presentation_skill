@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-"""Local wrapper around OpenAI gpt-image-2 with the same signature shape
-as `gemini_generate_image.generate`, so `generate_slides.py` can dispatch
-to either backend by name.
+"""Local wrapper around the OpenAI GPT Image 2.5 models with the same
+signature shape as `gemini_generate_image.generate`, so `generate_slides.py`
+can dispatch to either backend by name.
 
-Quality tiers (gpt-image-2 only): low / medium / high. Defaults to "low"
-in the slide-generation flow to keep batches cheap; raise to medium/high
-for final-quality renders.
+Two GPT Image 2.5 variants, same price:
+- `gpt-image-2.5-flare` — speed-first, for fast drafts (default at 1K).
+- `gpt-image-2.5-sunburst` — precision-first, for final renders (default at 2K/4K).
+
+Quality tiers: low / medium / high / xhigh / max / auto. Defaults to "auto"
+so the model picks the right level per prompt; pass an explicit tier to pin
+cost or quality. The 2.5 scale is finer than GPT Image 2's: 2.5 `high` costs
+roughly a quarter of GPT Image 2 `high`, and 2.5 `max` matches the old `high`.
 
 Sizes (1K / 2K / 4K) map to concrete pixel dimensions identical to the
 workspace-level `tools/generate_image.py` mapping. Only 16:9 is needed
@@ -88,10 +93,12 @@ def generate(
     output_prefix: str = "output",
     image_size: str = "4K",
     aspect_ratio: Optional[str] = None,
-    quality: str = "low",
+    quality: str = "auto",
+    model_id: str = "gpt-image-2.5-sunburst",
 ) -> Optional[Path]:
-    """Generate one image via gpt-image-2. Defaults to 4K low for cheap
-    batch slide rendering. Returns the first saved path or None."""
+    """Generate one image via a GPT Image 2.5 model. Returns the first saved
+    path or None. Accepts any number of reference images: the API supports
+    multiple image inputs natively, so no stacking is needed."""
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         print("Error: OPENAI_API_KEY environment variable not set", file=sys.stderr)
@@ -99,30 +106,28 @@ def generate(
 
     size = _map_size(image_size, aspect_ratio)
     print(
-        f"OpenAI gpt-image-2 | Size: {size} | Quality: {quality}",
+        f"OpenAI {model_id} | Size: {size} | Quality: {quality}",
         file=sys.stderr,
     )
 
     client = OpenAI(api_key=api_key)
     if image_paths:
-        if len(image_paths) != 1:
-            print(
-                "Error: gpt-image-2 currently supports at most one input image.",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-        with open(image_paths[0], "rb") as image_file:
+        files = [open(path, "rb") for path in image_paths]
+        try:
             result = client.images.edit(
-                model="gpt-image-2",
-                image=image_file,
+                model=model_id,
+                image=files,
                 prompt=prompt,
                 quality=quality,
                 output_format="png",
                 extra_body={"size": size},
             )
+        finally:
+            for image_file in files:
+                image_file.close()
     else:
         result = client.images.generate(
-            model="gpt-image-2",
+            model=model_id,
             prompt=prompt,
             quality=quality,
             output_format="png",

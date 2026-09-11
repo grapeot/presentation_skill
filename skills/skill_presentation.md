@@ -93,7 +93,14 @@ PYTHONPATH=. python tools/generate_slides.py --outline outline_visual.md
 # Final batch: --size 4K --quality high --output-dir generated_slides_4k
 ```
 
-When a slide needs navbar + logo + chart (or QR), list all assets in `outline_visual.md`; the generator stacks them for gpt-image-2 and you describe top-to-bottom mapping in the prompt.
+The OpenAI backend targets the GPT Image 2.5 family, which ships as two variants at the same price:
+
+- `gpt-image-2.5-flare` — speed-first, for fast drafts.
+- `gpt-image-2.5-sunburst` — precision-first, for final renders.
+
+Variant defaults to size: **1K → flare**, **2K/4K → sunburst**. Override with `--variant flare|sunburst` (`auto` follows size). Quality defaults to **`auto`**; pin it with `--quality low|medium|high|xhigh|max|auto`. The 2.5 quality scale is finer than GPT Image 2's: 2.5 `high` costs roughly a quarter of GPT Image 2 `high`, and 2.5 `max` matches the old `high` spend.
+
+When a slide needs navbar + logo + chart (or QR), list all assets under `Asset` in `outline_visual.md`. GPT Image 2.5 accepts multiple input images in one call, so the generator passes them through directly; name each asset and its placement in the prompt.
 
 **Mode → root artifacts**
 
@@ -132,7 +139,7 @@ When a slide needs navbar + logo + chart (or QR), list all assets in `outline_vi
 | Non-Visual Transition Logical Flow | Adding logic comments in outline but slide visual remains disjointed | Logic transitions must be **visualized**. Incorporate a consistent **Top Navigation Bar / Flow Indicator** in the prompt (instructing the model to paint it and highlight the active step) and in the text overlay. |
 | Abstract or Vague Chart Prompts | Asking the model to "draw a radar chart of AI sychophancy/quality metrics" | Specify the **exact dimensions** (e.g. five dimensions: "AI腔词汇比率", "空洞无事实比率") and exact numbers/comparison pairs in the prompt. Do not leave abstractions for the image model to invent. |
 | PYTHONPATH Missing for Generator | `generate_slides.py` fails with ModuleNotFoundError: No module named 'tools' | Prepend `PYTHONPATH=.` when running generation scripts from local slide directories to fix Python module paths. |
-| Multi-image asset limit (gpt-image-2) | Listing navbar + logo + QR (or chart + style ref) under `Asset` triggers `gpt-image-2 currently supports at most one input image` | **Do not drop assets.** Keep every needed pixel reference in the outline `Asset` list. `tools/generate_slides.py` auto-stacks multiple assets vertically with Pillow into `generated_slides/stacked_assets_slide_N.png` and passes that single composite to the model. **Prompt must name the stack order** — e.g. 「参考叠加 Asset 自上而下依次为：导航条样式、Logo、二维码」 — so the model maps each region correctly. Asset order in the outline = top-to-bottom stack order. |
+| Multi-image assets | Listing navbar + logo + QR (or chart + style ref) under `Asset` | Keep every needed pixel reference in the outline `Asset` list. GPT Image 2.5 accepts multiple input images natively, so `tools/generate_slides.py` passes them all in one call — no stacking. Name each asset and its placement in the prompt (e.g. 「导航条贴顶左对齐，Logo 居中，二维码嵌入右侧卡片」). |
 | Hallucinated Quantitative Chart Details | asking the image model to draw exact numerical charts (bar charts, line graphs) | Always pre-plot quantitative charts using Python + Matplotlib to generate a precise PNG image, use it as the single `Asset`, and guide the image model to replicate its content and layout. |
 | Painted links that don't click | A URL pill or QR caption rendered into the slide image; audience receives the HTML deck and nothing is clickable, or overlay coords copied from the prompt miss the element by ~5% | Add an overlay layer per [docs/clickable_overlays.md](../docs/clickable_overlays.md): coordinates come from post-generation vision measurement (not from the prompt), hotzones get 1.5% padding, and each overlay is verified with a Pillow draw-back check. |
 | Printed-PDF link 404s / tiny pages | `?print-pdf` rewrites overlay links to the *visible pill text* (so `x.com/a` 404s when href is `x.com/a.html`), and un-sized Reveal prints each slide as a tiny centered box | Don't print from the browser at all: `scripts/presentation-skill export-pdf <deck>` builds the PDF from the images and embeds overlay links as real PDF annotations. Browser printing is a last resort only when the compat gate reports the deck isn't a pure image deck. |
