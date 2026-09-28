@@ -108,10 +108,10 @@ Covers `export_html_pdf.py` and the HTML branch of `export-pdf`. The unit tests 
 - loopback URL classification, notes paragraph splitting, default output paths
 - deck detection (`js/engine.js` + `window.DECK`), `--mode` resolution including the `canvas` alias, parser flags, `--with-notes` rejected for image decks
 - a missing Playwright gives the `[pdf-html]` install hint and exit code 3
-- PDF post-processing: repeated images stored once, page count / page size / text-layer verification, contact-sheet grid
+- PDF post-processing: large RGB Flate images re-encoded as JPEG (and left alone the second time), `image_quality` validated, repeated images stored once, page count / page size / text-layer verification, contact-sheet grid
 
 The browser tests copy the template deck to a temporary directory, replace the npm-vendored Reveal with a small stub that implements what `js/engine.js` calls, and drop the web fonts (neither is committed). They run only when Playwright and its Chromium build are installed, and are skipped otherwise:
 
-- export with notes: 10 pages at 1440×810 pt, slide pages carry only their own frame's text, notes pages carry only notes, a `print: 0` override prints the first state, the default prints the last state, counters show their final values, a `html.pdf-export[data-print-slide=…]` handout rule applies only on its own page, and a DOM link survives as a `/URI` annotation
+- export with notes: blurred shadows, repeating gradients and both SVG hatch patterns are redrawn and no luminosity soft mask is left in the file; 10 pages at 1440×810 pt, slide pages carry only their own frame's text, notes pages carry only notes, a `print: 0` override prints the first state, the default prints the last state, counters show their final values, a `html.pdf-export[data-print-slide=…]` handout rule applies only on its own page, and a DOM link survives as a `/URI` annotation
 - failures: an unfilled slot, an external request plus a console error, and an out-of-range `print` value all raise `HtmlExportError`
 - CLI end-to-end export to a custom `--output`

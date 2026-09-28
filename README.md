@@ -37,7 +37,7 @@ scripts/presentation-skill export-pdf deck                 # image deck: lossles
 scripts/presentation-skill export-pdf deck --with-notes    # HTML (canvas) deck: one page per slide, each followed by its notes
 ```
 
-`export-pdf` picks the exporter from the deck. Image decks need the `[pdf]` extra. HTML (canvas) decks are printed through headless Chromium, one page per slide at a chosen print state (by default the slide's last step), with vector, selectable text. They need the `[pdf-html]` extra and `python -m playwright install chromium`. The HTML export fails on console errors, requests that leave localhost, unfilled copy slots or a page count that does not match the slide table, and writes a contact sheet next to the PDF. See `skills/html_decks.md`.
+`export-pdf` picks the exporter from the deck. Image decks need the `[pdf]` extra. HTML (canvas) decks are printed through headless Chromium, one page per slide at a chosen print state (by default the slide's last step), with vector, selectable text. Effects that Preview renders differently from the browser (blurred shadows, repeating gradients, SVG patterns) are redrawn before printing, and large images are capped and JPEG-compressed. They need the `[pdf-html]` extra and `python -m playwright install chromium`. The HTML export fails on console errors, requests that leave localhost, unfilled copy slots or a page count that does not match the slide table, and writes a contact sheet next to the PDF. See `skills/html_decks.md`.
 
 ## Local Development
 

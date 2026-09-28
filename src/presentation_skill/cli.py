@@ -58,6 +58,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="HTML decks: follow every slide page with a page of its speaker notes",
     )
     export.add_argument(
+        "--image-quality",
+        type=int,
+        default=85,
+        help="HTML decks: JPEG quality for large embedded images, 1-100 (0 keeps them lossless; default 85)",
+    )
+    export.add_argument(
+        "--image-scale",
+        type=float,
+        default=2.0,
+        help="HTML decks: cap <img> resolution at this multiple of the displayed size (0 keeps originals; default 2)",
+    )
+    export.add_argument(
         "--no-contact-sheet",
         action="store_true",
         help="HTML decks: skip the contact sheet written next to the PDF",
@@ -164,11 +176,13 @@ def _run_export_html_pdf(args: argparse.Namespace, deck_dir: Path) -> int:
             with_notes=args.with_notes,
             contact_sheet=not args.no_contact_sheet,
             check_only=args.check_only,
+            image_quality=args.image_quality,
+            image_scale=args.image_scale,
         )
     except MissingDependencyError as exc:
         print(exc)
         return 3
-    except HtmlExportError as exc:
+    except (HtmlExportError, ValueError) as exc:
         print(exc)
         return 2
     for warning in result.warnings:
@@ -176,8 +190,13 @@ def _run_export_html_pdf(args: argparse.Namespace, deck_dir: Path) -> int:
     if args.check_only:
         print(f"ok: {result.slides} slides, print states checked, no errors, no external requests, no missing slots")
         return 0
+    size_mb = result.output.stat().st_size / 1e6
     print(f"{result.output} ({result.pages} pages: {result.slides} slides"
-          + (f" + {result.slides} notes pages" if args.with_notes else "") + ")")
+          + (f" + {result.slides} notes pages" if args.with_notes else "")
+          + f"; {size_mb:.1f} MB, {result.merged_bytes / 1e6:.1f} MB before image dedupe/compression)")
+    if any(result.flattened.values()):
+        print("re-drawn as images for PDF viewers: "
+              + ", ".join(f"{v} {k}" for k, v in result.flattened.items() if v))
     for sheet in result.contact_sheets:
         print(f"contact sheet: {sheet}")
     return 0

@@ -28,6 +28,12 @@ switched off, and every state is applied instantly. Each state is printed with
 merged with pypdf. Text stays vector and selectable; DOM links become PDF link
 annotations.
 
+Before each page is printed, paint effects that PDF viewers render differently from the
+browser (blurred box-shadows, repeating gradients, SVG patterns, no-op CSS masks) are
+re-drawn by the browser as images or plain vector geometry, and oversized ``<img>`` sources
+are downsampled; after merging, large RGB images are re-encoded as JPEG (see
+``_JS_FLATTEN`` and :func:`recompress_images`).
+
 During export ``<html>`` carries the class ``pdf-export`` and the attributes
 ``data-print-slide`` / ``data-print-step``, so a deck can supply a dedicated
 handout layout in CSS for a slide whose final state hides information.
@@ -44,6 +50,7 @@ import functools
 import http.server
 import io
 import ipaddress
+import logging
 import shutil
 import subprocess
 import tempfile
@@ -56,6 +63,13 @@ from urllib.parse import urlsplit
 WIDTH, HEIGHT = 1920, 1080
 # page.pdf sizes in CSS px; 1 px = 0.75 pt, so every page is 1440 x 810 pt.
 PAGE_PT = (WIDTH * 0.75, HEIGHT * 0.75)
+
+# Effects re-drawn as images are rendered at this multiple of CSS px (192 dpi on the page).
+FLATTEN_SCALE = 2.0
+# Embedded <img> sources are capped at this multiple of their displayed size.
+DEFAULT_IMAGE_SCALE = 2.0
+# Large RGB images are re-encoded as JPEG at this quality (0 = keep lossless).
+DEFAULT_IMAGE_QUALITY = 85
 
 INSTALL_HINT = (
     "pip install 'presentation-skill[pdf-html]' && python -m playwright install chromium"
@@ -139,6 +153,8 @@ class HtmlExportResult:
     plan: list[PageSpec] = field(default_factory=list)
     contact_sheets: list[Path] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    merged_bytes: int = 0  # size before dedupe and image re-encoding
+    flattened: dict = field(default_factory=dict)  # effects re-drawn as images, summed over pages
 
 
 # ---------------------------------------------------------------- pure logic
@@ -330,12 +346,18 @@ class _QuietHandler(http.server.SimpleHTTPRequestHandler):
         super().end_headers()
 
 
+class _Server(http.server.ThreadingHTTPServer):
+    # The default backlog (5) drops connections when Chromium opens a burst of parallel
+    # requests for fonts and plates, which surfaces as net::ERR_SOCKET_NOT_CONNECTED.
+    request_queue_size = 128
+    daemon_threads = True
+
+
 @contextlib.contextmanager
 def serve_directory(directory: Path) -> Iterator[str]:
     """Serve ``directory`` on a free loopback port; yields the base URL."""
     handler = functools.partial(_QuietHandler, directory=str(directory))
-    server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
-    server.daemon_threads = True
+    server = _Server(("127.0.0.1", 0), handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
@@ -399,11 +421,15 @@ _JS_SETTLE = """async ({frames, timeout}) => {
   await document.fonts.ready;
   await Promise.all([...document.images].filter(i => i.src && !i.complete)
     .map(i => new Promise(r => { i.onload = i.onerror = r; })));
+  await Promise.all([...document.images].filter(i => i.src).map(i => i.decode().catch(() => null)));
   await frame(); await frame();
-  return stable;
+  settleAnimations();
+  const running = document.getAnimations().filter(a => a.playState === 'running').length;
+  return {stable, running};
 }"""
 
 _JS_GOTO = """([i, step, id]) => {
+  const u = window.__pdfUndo || []; while (u.length) { try { u.pop()(); } catch (e) {} }
   window.deckGoto(i, step);
   const html = document.documentElement;
   html.dataset.printSlide = id; html.dataset.printStep = String(step);
@@ -446,6 +472,216 @@ _JS_NOTES_SHOW = """({paras, left, right}) => {
   return {size: 16, fits: false};
 }"""
 
+# Chromium's PDF backend turns some paint effects into constructs that PDF viewers render
+# differently from the browser: a blurred box-shadow becomes a fill under a luminosity soft mask
+# (Apple PDFKit / Preview ignores the mask and paints a solid grey box), a repeating gradient is
+# rasterised into one low-resolution tile for the whole page (moire hatching), and a CSS mask
+# becomes a luminosity soft mask too. Before each page is printed, these effects are re-drawn
+# by the browser itself into PNGs at `scale` x (via an SVG foreignObject), which the PDF embeds
+# as plain images with alpha. Oversized <img> sources are downsampled to `imageScale` x their
+# displayed size. Everything is undone before the next state is applied.
+_JS_FLATTEN = r"""async ({scale, imageScale}) => {
+  const undo = []; window.__pdfUndo = undo;
+  const notes = [];
+  const W = innerWidth, H = innerHeight;
+  const onScreen = el => { const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && r.right > 0 && r.bottom > 0 && r.left < W && r.top < H; };
+  const split = s => { const out = []; let d = 0, cur = '';
+    for (const ch of s) { if (ch === '(') d++; if (ch === ')') d--;
+      if (ch === ',' && d === 0) { out.push(cur.trim()); cur = ''; } else cur += ch; }
+    if (cur.trim()) out.push(cur.trim()); return out; };
+  const lengths = sh => (sh.replace(/[a-z-]*\([^)]*\)/gi, ' ').match(/-?[\d.]+px/g) || []).map(parseFloat);
+  const esc = t => t.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const label = el => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') +
+    (typeof el.className === 'string' && el.className.trim() ? '.' + el.className.trim().split(/\s+/).join('.') : '');
+  // Render an HTML fragment with the browser's own painter into a PNG data URL.
+  const raster = async (html, w, h, s) => {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(w * s)}" height="${Math.ceil(h * s)}" viewBox="0 0 ${w} ${h}">` +
+      `<foreignObject x="0" y="0" width="${w}" height="${h}"><div xmlns="http://www.w3.org/1999/xhtml" style="margin:0;padding:0">${html}</div></foreignObject></svg>`;
+    const img = new Image();
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    await img.decode();
+    const c = document.createElement('canvas'); c.width = Math.ceil(w * s); c.height = Math.ceil(h * s);
+    const ctx = c.getContext('2d'); ctx.drawImage(img, 0, 0, c.width, c.height);
+    return c;
+  };
+  const setImp = (el, prop, val) => el.style.setProperty(prop, val, 'important');
+  const remember = el => { if (!('__pdfStyle' in el)) { el.__pdfStyle = el.getAttribute('style'); undo.push(() => {
+      if (el.__pdfStyle === null) el.removeAttribute('style'); else el.setAttribute('style', el.__pdfStyle);
+      delete el.__pdfStyle; }); } };
+  const sheet = document.createElement('style'); sheet.id = '__pdf_flatten__'; document.head.appendChild(sheet);
+  undo.push(() => sheet.remove());
+  let rules = '', k = 0;
+  const stats = {shadows: 0, gradients: 0, masks: 0, patterns: 0, images: 0};
+
+  for (const el of (scale > 0 ? document.body.querySelectorAll('*') : [])) {
+    if (!(el instanceof HTMLElement) || el.id === '__pdf_notes__' || !onScreen(el)) continue;
+    const cs = getComputedStyle(el);
+    if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+    const w = el.offsetWidth, h = el.offsetHeight;
+    if (!w || !h) continue;
+    const bw = ['Top', 'Right', 'Bottom', 'Left'].map(sd => parseFloat(cs['border' + sd + 'Width']) || 0);
+    const radius = cs.borderRadius;
+
+    // 1. blurred outer box-shadows -> PNG on a pseudo-element behind the element
+    if (cs.boxShadow && cs.boxShadow !== 'none') {
+      const all = split(cs.boxShadow);
+      const blurred = all.filter(sh => !/\binset\b/.test(sh) && (lengths(sh)[2] || 0) > 0);
+      if (blurred.length) {
+        const free = ['::before', '::after'].find(ps => getComputedStyle(el, ps).content === 'none');
+        const clips = cs.overflowX !== 'visible' || cs.overflowY !== 'visible';
+        let positioned = cs.position !== 'static' || cs.transform !== 'none';
+        if (!positioned) {
+          const dependent = [...el.querySelectorAll('*')].some(d => getComputedStyle(d).position === 'absolute');
+          if (!dependent) { remember(el); setImp(el, 'position', 'relative'); positioned = true; }
+        }
+        if (!free || clips || !positioned) {
+          notes.push(`${label(el)}: blurred box-shadow left as is (${!free ? 'no free pseudo-element' : clips ? 'element clips overflow' : 'cannot position a shadow layer'})`);
+        } else {
+          const pad = Math.ceil(Math.max(...blurred.map(sh => { const [x, y, b, sp] = lengths(sh);
+            return (b || 0) + Math.abs(sp || 0) + Math.max(Math.abs(x || 0), Math.abs(y || 0)); })) + 4);
+          const box = `position:absolute;left:${pad}px;top:${pad}px;width:${w}px;height:${h}px;box-sizing:border-box;` +
+            `border-radius:${radius};box-shadow:${blurred.join(', ')}`;
+          const c = await raster(`<div style="${esc(box)}"></div>`, w + 2 * pad, h + 2 * pad, scale);
+          const id = 'pdfs' + (k++);
+          remember(el); el.setAttribute('data-pdf-flat', id);
+          undo.push(() => el.removeAttribute('data-pdf-flat'));
+          const kept = all.filter(sh => !blurred.includes(sh));
+          setImp(el, 'box-shadow', kept.length ? kept.join(', ') : 'none');
+          setImp(el, 'isolation', 'isolate');
+          rules += `[data-pdf-flat="${id}"]${free}{content:"";position:absolute;display:block;pointer-events:none;z-index:-1;` +
+            `left:${-pad - bw[3]}px;top:${-pad - bw[0]}px;width:${w + 2 * pad}px;height:${h + 2 * pad}px;` +
+            `margin:0;padding:0;border:0;transform:none;opacity:1;box-shadow:none;` +
+            `background:url(${c.toDataURL('image/png')}) 0 0/100% 100% no-repeat}\n`;
+          stats.shadows++;
+        }
+      }
+    }
+
+    // 2. repeating / conic gradient backgrounds -> PNG background
+    const bg = cs.backgroundImage;
+    if (bg && bg !== 'none' && /(repeating-[a-z]+-gradient|conic-gradient)\(/.test(bg)) {
+      if (/url\(/.test(bg)) {
+        notes.push(`${label(el)}: gradient mixed with an image background left as is`);
+      } else {
+        const props = ['background-image', 'background-color', 'background-size', 'background-position',
+          'background-repeat', 'background-origin', 'background-clip'];
+        const box = `width:${w}px;height:${h}px;box-sizing:border-box;border-style:solid;border-color:transparent;` +
+          `border-width:${bw.map(v => v + 'px').join(' ')};border-radius:${radius};` +
+          props.map(pr => `${pr}:${cs.getPropertyValue(pr)}`).join(';');
+        const c = await raster(`<div style="${esc(box)}"></div>`, w, h, scale);
+        remember(el);
+        setImp(el, 'background', `url(${c.toDataURL('image/png')}) 0 0/100% 100% no-repeat border-box border-box`);
+        stats.gradients++;
+      }
+    }
+
+    // 3. a CSS mask that is fully opaque over the element is a no-op: drop it
+    const mask = cs.getPropertyValue('mask-image') || cs.getPropertyValue('-webkit-mask-image');
+    if (mask && mask !== 'none' && !/url\(/.test(mask)) {
+      const box = `width:${w}px;height:${h}px;background-image:${mask};` +
+        `background-size:${cs.getPropertyValue('mask-size') || 'auto'};` +
+        `background-position:${cs.getPropertyValue('mask-position') || '0 0'};` +
+        `background-repeat:${cs.getPropertyValue('mask-repeat') || 'repeat'}`;
+      const c = await raster(`<div style="${esc(box)}"></div>`, w, h, 0.25);
+      const px = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+      let opaque = true; for (let i = 3; i < px.length; i += 4) if (px[i] < 255) { opaque = false; break; }
+      if (opaque) { remember(el); setImp(el, 'mask-image', 'none'); setImp(el, '-webkit-mask-image', 'none'); stats.masks++; }
+      else notes.push(`${label(el)}: partially transparent CSS mask printed as a soft mask (viewers may differ)`);
+    }
+  }
+  sheet.textContent = rules;
+
+  // 4. SVG shapes filled with a <pattern> -> the pattern tiled out as explicit vector geometry
+  // (Chromium prints SVG patterns as one low-resolution raster tile, which viewers moire).
+  const NS = 'http://www.w3.org/2000/svg';
+  const shapes = scale > 0 ? [...document.querySelectorAll('svg rect, svg path, svg circle, svg ellipse, svg polygon, svg polyline')] : [];
+  for (const shape of shapes) {
+    const fill = getComputedStyle(shape).fill || '';
+    const m = fill.match(/url\(["']?[^#"')]*#([^"')]+)["']?\)/);
+    if (!m || !shape.getBBox || !onScreen(shape)) continue;
+    const pat = document.getElementById(m[1]);
+    if (!pat || pat.tagName.toLowerCase() !== 'pattern') continue;
+    const units = pat.getAttribute('patternUnits') || 'objectBoundingBox';
+    const cunits = pat.getAttribute('patternContentUnits') || 'userSpaceOnUse';
+    const tw = parseFloat(pat.getAttribute('width')), th = parseFloat(pat.getAttribute('height'));
+    if (units !== 'userSpaceOnUse' || cunits !== 'userSpaceOnUse' || pat.hasAttribute('viewBox') ||
+        pat.hasAttribute('href') || pat.hasAttribute('xlink:href') || !(tw > 0) || !(th > 0)) {
+      notes.push(`svg pattern #${m[1]}: unsupported pattern attributes, left as is`); continue;
+    }
+    const px = parseFloat(pat.getAttribute('x')) || 0, py = parseFloat(pat.getAttribute('y')) || 0;
+    const ptf = pat.patternTransform.baseVal.consolidate();
+    const pm = ptf ? ptf.matrix : new DOMMatrix();
+    const inv = DOMMatrix.fromMatrix(pm).inverse();
+    const b = shape.getBBox();
+    const own = shape.transform && shape.transform.baseVal.consolidate();
+    const sm = own ? DOMMatrix.fromMatrix(own.matrix) : new DOMMatrix();
+    // bbox corners in the parent's user space, then into pattern space
+    const pts = [[b.x, b.y], [b.x + b.width, b.y], [b.x, b.y + b.height], [b.x + b.width, b.y + b.height]]
+      .map(([x, y]) => new DOMPoint(x, y).matrixTransform(sm).matrixTransform(inv));
+    const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+    const i0 = Math.floor((Math.min(...xs) - px) / tw) - 1, i1 = Math.ceil((Math.max(...xs) - px) / tw) + 1;
+    const j0 = Math.floor((Math.min(...ys) - py) / th) - 1, j1 = Math.ceil((Math.max(...ys) - py) / th) + 1;
+    if ((i1 - i0) * (j1 - j0) > 6000) { notes.push(`svg pattern #${m[1]}: too many tiles, left as is`); continue; }
+    const id = 'pdfp' + (k++);
+    const defs = document.createElementNS(NS, 'defs');
+    const clipShape = document.createElementNS(NS, 'clipPath'); clipShape.id = id + 's';
+    const clone = shape.cloneNode(false); clone.removeAttribute('id'); clone.removeAttribute('class');
+    clone.removeAttribute('style'); clone.removeAttribute('clip-path');
+    clipShape.appendChild(clone);
+    const clipTile = document.createElementNS(NS, 'clipPath'); clipTile.id = id + 't';
+    const tr = document.createElementNS(NS, 'rect');
+    tr.setAttribute('width', tw); tr.setAttribute('height', th); clipTile.appendChild(tr);
+    const tile = document.createElementNS(NS, 'g'); tile.id = id + 'c';
+    for (const ch of pat.childNodes) tile.appendChild(ch.cloneNode(true));
+    defs.append(clipShape, clipTile, tile);
+    const outer = document.createElementNS(NS, 'g');
+    outer.setAttribute('clip-path', `url(#${id}s)`);
+    const op = getComputedStyle(shape).fillOpacity; if (op && op !== '1') outer.setAttribute('opacity', op);
+    const inner = document.createElementNS(NS, 'g');
+    inner.setAttribute('transform', `matrix(${pm.a} ${pm.b} ${pm.c} ${pm.d} ${pm.e} ${pm.f})`);
+    for (let i = i0; i < i1; i++) for (let j = j0; j < j1; j++) {
+      const g = document.createElementNS(NS, 'g');
+      g.setAttribute('transform', `translate(${px + i * tw} ${py + j * th})`);
+      g.setAttribute('clip-path', `url(#${id}t)`);
+      const u = document.createElementNS(NS, 'use'); u.setAttribute('href', `#${id}c`);
+      g.appendChild(u); inner.appendChild(g);
+    }
+    outer.appendChild(inner);
+    shape.parentNode.insertBefore(defs, shape);
+    shape.parentNode.insertBefore(outer, shape);
+    const prevFill = shape.style.getPropertyValue('fill'), prevPri = shape.style.getPropertyPriority('fill');
+    shape.style.setProperty('fill', 'none', 'important');
+    undo.push(() => { defs.remove(); outer.remove();
+      if (prevFill) shape.style.setProperty('fill', prevFill, prevPri); else shape.style.removeProperty('fill'); });
+    stats.patterns = (stats.patterns || 0) + 1;
+  }
+
+  // 5. downsample oversized images to imageScale x their displayed size
+  if (imageScale > 0) {
+    for (const img of document.images) {
+      if (!img.complete || !img.naturalWidth || !onScreen(img)) continue;
+      const r = img.getBoundingClientRect();
+      const f = Math.min(1, imageScale * Math.max(r.width / img.naturalWidth, r.height / img.naturalHeight));
+      if (f > 0.8) continue;
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(img.naturalWidth * f)); c.height = Math.max(1, Math.round(img.naturalHeight * f));
+      const ctx = c.getContext('2d'); ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      const src = img.getAttribute('src'), srcset = img.getAttribute('srcset');
+      undo.push(() => { if (srcset !== null) img.setAttribute('srcset', srcset); img.setAttribute('src', src); });
+      img.removeAttribute('srcset'); img.src = c.toDataURL('image/png');
+      await img.decode().catch(() => null);
+      stats.images++;
+    }
+  }
+  await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+  return {stats, notes};
+}"""
+
+_JS_UNFLATTEN = """() => { const u = window.__pdfUndo || []; while (u.length) { try { u.pop()(); } catch (e) {} }
+  window.__pdfUndo = []; }"""
+
 _JS_FONTS = """() => [...document.fonts].map(f => ({family: f.family, status: f.status,
   weight: f.weight, style: f.style}))"""
 
@@ -475,12 +711,24 @@ def export_canvas_pdf(
     check_only: bool = False,
     settle_timeout_ms: int = 4000,
     load_timeout_ms: int = 30000,
+    flatten: bool = True,
+    image_scale: float = DEFAULT_IMAGE_SCALE,
+    image_quality: int = DEFAULT_IMAGE_QUALITY,
 ) -> HtmlExportResult:
     """Export a canvas deck to PDF (or, with ``check_only``, run the checks without printing).
+
+    ``flatten`` re-draws blurred box-shadows, repeating gradients and no-op CSS masks as
+    images before printing (see ``_JS_FLATTEN``). ``image_scale`` caps embedded ``<img>``
+    resolution at that multiple of the displayed size (0 keeps the originals), and
+    ``image_quality`` re-encodes large RGB images as JPEG at that quality (0 keeps them lossless).
 
     Raises :class:`HtmlExportError` when any check fails and
     :class:`MissingDependencyError` when Playwright/Chromium/pypdf/a rasterizer is missing.
     """
+    if not 0 <= image_quality <= 100:
+        raise ValueError("image_quality must be between 0 and 100")
+    if image_scale < 0:
+        raise ValueError("image_scale must be >= 0")
     deck_dir = Path(deck_dir).resolve()
     if not is_canvas_deck(deck_dir):
         raise HtmlExportError(
@@ -523,6 +771,15 @@ def export_canvas_pdf(
     def on_response(resp):
         if resp.status >= 400 and is_local_url(resp.url):
             failed.append(f"{resp.url} (HTTP {resp.status})")
+
+    flattened: dict[str, int] = {}
+
+    def settle(spec: PageSpec) -> None:
+        state = page.evaluate(_JS_SETTLE, {"frames": 3, "timeout": settle_timeout_ms})
+        if not state["stable"]:
+            warnings.append(f"{spec.label}: DOM still changing after {settle_timeout_ms} ms; printed as is")
+        if state["running"]:
+            warnings.append(f"{spec.label}: {state['running']} animation(s) still running at capture")
 
     def raise_if_problems(stage: str):
         problems = []
@@ -580,8 +837,7 @@ def export_canvas_pdf(
                     if spec.kind != "slide":
                         continue
                     page.evaluate(_JS_GOTO, [spec.slide_index, spec.step, spec.slide_id])
-                    if not page.evaluate(_JS_SETTLE, {"frames": 3, "timeout": settle_timeout_ms}):
-                        warnings.append(f"{spec.label}: DOM still changing after {settle_timeout_ms} ms")
+                    settle(spec)
                     missing = page.evaluate(_JS_MISSING)
                     if missing:
                         errors.append(f"{spec.label}: unfilled copy slots: " + ", ".join(missing))
@@ -591,10 +847,16 @@ def export_canvas_pdf(
                     slide = slides[spec.slide_index]
                     if spec.kind == "slide":
                         page.evaluate(_JS_GOTO, [spec.slide_index, spec.step, spec.slide_id])
-                        if not page.evaluate(_JS_SETTLE, {"frames": 3, "timeout": settle_timeout_ms}):
-                            warnings.append(
-                                f"{spec.label}: DOM still changing after {settle_timeout_ms} ms; printed as is"
+                        settle(spec)
+                        if flatten or image_scale:
+                            flat = page.evaluate(
+                                _JS_FLATTEN,
+                                {"scale": FLATTEN_SCALE if flatten else 0, "imageScale": image_scale},
                             )
+                            for k, v in flat["stats"].items():
+                                flattened[k] = flattened.get(k, 0) + v
+                            for note in flat["notes"]:
+                                warnings.append(f"{spec.label}: {note}")
                     else:
                         left = f"Speaker notes · {slide.part}" if slide.part else "Speaker notes"
                         right = f"{spec.slide_index + 1:02d} / {n:02d} · {slide.id}"
@@ -629,6 +891,7 @@ def export_canvas_pdf(
 
     raise_if_problems("export")
 
+    warnings = list(dict.fromkeys(warnings))
     result = HtmlExportResult(output=None, slides=len(slides), pages=0, plan=plan, warnings=warnings)
     if check_only:
         return result
@@ -644,8 +907,14 @@ def export_canvas_pdf(
         writer.add_metadata({"/Title": title})
     buf = io.BytesIO()
     writer.write(buf)
+    merged = buf.getvalue()
+    final = dedupe_pdf(merged)
+    if image_quality:
+        final = recompress_images(final, image_quality)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_bytes(dedupe_pdf(buf.getvalue()))
+    output.write_bytes(final)
+    result.merged_bytes = len(merged)
+    result.flattened = flattened
 
     problems += verify_pdf(output, plan, expected_page_count(len(slides), with_notes))
     if problems:
@@ -707,6 +976,8 @@ def dedupe_pdf(data: bytes) -> bytes:
     PdfReader, PdfWriter = _require_pypdf()
     from pypdf.generic import DictionaryObject, IndirectObject, NameObject  # type: ignore
 
+    # pypdf warns about Chromium's per-page xref sizes after merging; the objects are fine.
+    logging.getLogger("pypdf").setLevel(logging.ERROR)
     reader = PdfReader(io.BytesIO(data))
     memo: dict = {}
     canonical: dict[bytes, IndirectObject] = {}
@@ -746,6 +1017,97 @@ def dedupe_pdf(data: bytes) -> bytes:
     writer.write(buf)
     out = buf.getvalue()
     return out if len(out) < len(data) else data
+
+
+def _image_refs(reader) -> tuple[list, set[int]]:
+    """Every image XObject reachable from page resources, and the ids used as soft masks."""
+    from pypdf.generic import DictionaryObject, IndirectObject  # type: ignore
+
+    images, masks, seen = [], set(), set()
+
+    def walk(res) -> None:
+        res = res.get_object() if isinstance(res, IndirectObject) else res
+        if not isinstance(res, DictionaryObject):
+            return
+        for cat in ("/XObject", "/Pattern"):
+            group = res.get(cat)
+            group = group.get_object() if group is not None else None
+            if not isinstance(group, DictionaryObject):
+                continue
+            for name in group:
+                ref = group.raw_get(name)
+                if not isinstance(ref, IndirectObject) or ref.idnum in seen:
+                    continue
+                seen.add(ref.idnum)
+                obj = ref.get_object()
+                if obj.get("/Subtype") == "/Image":
+                    images.append(ref)
+                    smask = obj.raw_get("/SMask") if "/SMask" in obj else None
+                    if isinstance(smask, IndirectObject):
+                        masks.add(smask.idnum)
+                elif "/Resources" in obj:
+                    walk(obj["/Resources"])
+
+    for page in reader.pages:
+        if "/Resources" in page:
+            walk(page["/Resources"])
+    return images, masks
+
+
+def recompress_images(data: bytes, quality: int = DEFAULT_IMAGE_QUALITY, min_pixels: int = 16384) -> bytes:
+    """Re-encode large 8-bit RGB Flate images as JPEG; soft masks stay lossless.
+
+    An image is only replaced when the JPEG is clearly smaller. Returns the new PDF bytes.
+    """
+    PdfReader, PdfWriter = _require_pypdf()
+    from PIL import Image  # type: ignore
+    from pypdf.generic import ArrayObject, NameObject  # type: ignore
+
+    reader = PdfReader(io.BytesIO(data))
+    images, masks = _image_refs(reader)
+    changed = 0
+    for ref in images:
+        if ref.idnum in masks:
+            continue
+        obj = ref.get_object()
+        filt = obj.get("/Filter")
+        if isinstance(filt, ArrayObject):
+            filt = filt[0] if len(filt) == 1 else None
+        cs = obj.get("/ColorSpace")
+        cs = cs.get_object() if cs is not None else None
+        rgb = cs == "/DeviceRGB" or (
+            isinstance(cs, ArrayObject) and len(cs) == 2 and cs[0] == "/ICCBased" and cs[1].get_object().get("/N") == 3
+        )
+        w, h = int(obj.get("/Width", 0)), int(obj.get("/Height", 0))
+        if (
+            filt != "/FlateDecode"
+            or not rgb
+            or obj.get("/BitsPerComponent") != 8
+            or "/Decode" in obj
+            or w * h < min_pixels
+        ):
+            continue
+        raw = obj.get_data()
+        if len(raw) != w * h * 3:
+            continue
+        out = io.BytesIO()
+        Image.frombytes("RGB", (w, h), raw).save(
+            out, format="JPEG", quality=quality, optimize=True, subsampling=0 if quality >= 90 else 2
+        )
+        jpeg = out.getvalue()
+        if len(jpeg) > 0.85 * len(obj._data):
+            continue
+        obj._data = jpeg
+        obj[NameObject("/Filter")] = NameObject("/DCTDecode")
+        if "/DecodeParms" in obj:
+            del obj["/DecodeParms"]
+        changed += 1
+    if not changed:
+        return data
+    writer = PdfWriter(clone_from=reader)
+    buf = io.BytesIO()
+    writer.write(buf)
+    return buf.getvalue()
 
 
 def verify_pdf(path: Path, plan: list[PageSpec], expected: int) -> list[str]:

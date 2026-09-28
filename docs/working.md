@@ -130,3 +130,18 @@ Known limitations:
 - An infinite CSS idle animation prints at its first frame. JavaScript-driven motion that never settles is printed after 4 s, with a warning.
 - Letters split into per-character spans (the `.type` effect) extract without word spaces in some PDF readers (pypdf); pymupdf reads the spaces correctly.
 - Glyphs missing from a subsetted web font fall back to a system font, exactly as on screen (seen for "→" in a Latin-only mono subset).
+
+### 2026-09-28 (later): Preview fidelity and image size
+
+- Owner review of the 43-slide handout found two problems. The falling-away half of each split card showed a grey box in Preview. Images sometimes did not display fully.
+- Cause of the grey box, reproduced by rendering the PDF with PDFKit (the engine behind Preview): Chromium prints a blurred `box-shadow` as a fill under a luminosity soft mask with a JPEG mask image. PDFKit ignores that mask and fills the whole shadow rectangle grey. pymupdf and Chromium honour the mask, which is why the earlier contact sheets looked right. Also found: repeating gradients and SVG `<pattern>` fills are printed as one low-resolution raster tile, which shows as moiré in PDFKit.
+- Fix, in the exporter and generic for any canvas deck: before each page is printed, the browser redraws these effects itself.
+  - Blurred outer shadows are redrawn into a 2× PNG on a free pseudo-element behind the element.
+  - Repeating and conic gradient backgrounds are redrawn into a 2× PNG background.
+  - SVG pattern fills are tiled out into clipped vector geometry.
+  - CSS masks that are fully opaque over their element are dropped.
+
+  All changes are undone before the next state.
+- Images: `<img>` sources are capped at 2× their displayed size (`--image-scale`), and large RGB Flate images are re-encoded as JPEG q85 after merging (`--image-quality`); soft masks stay lossless. The settle step now also waits for `img.decode()` and reports animations still running at capture.
+- Local server backlog raised to 128. The default of 5 dropped a connection under a burst of font and plate requests (`net::ERR_SOCKET_NOT_CONNECTED`, then `DECK` undefined).
+- Verification on the real deck (43 slides, deck not committed): every page was rendered with PDFKit and diffed against a live screenshot of the same settled state. Before the fix, the split-card pages differed on 5.7% of pixels (the grey boxes) and the bar-chart page on 1.8% (moiré). After the fix, the maximum is 0.27%, all anti-aliasing and PDFKit's slightly heavier rendering of the embedded mono font. Size: 53 MB as printed, 19 MB with dedupe only, 11.4 MB now (13.3 MB with notes).

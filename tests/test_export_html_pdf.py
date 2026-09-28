@@ -25,6 +25,7 @@ from presentation_skill.export_html_pdf import (
     compose_contact_sheets,
     default_output,
     dedupe_pdf,
+    recompress_images,
     expected_page_count,
     is_canvas_deck,
     is_local_url,
@@ -214,6 +215,31 @@ def test_dedupe_stores_repeated_images_once():
     assert len(out) <= len(data)
 
 
+def test_recompress_images_turns_large_rgb_flate_into_jpeg():
+    img2pdf = pytest.importorskip("img2pdf")
+    from PIL import Image
+    from pypdf import PdfReader
+
+    # A photographic-ish RGB image that Flate compresses poorly.
+    im = Image.effect_noise((600, 400), 60).convert("RGB")
+    buf = io.BytesIO()
+    im.save(buf, format="PNG")
+    data = img2pdf.convert([buf.getvalue()])
+    out = recompress_images(data, quality=80)
+    assert len(out) < len(data)
+    page = PdfReader(io.BytesIO(out)).pages[0]
+    xobj = page["/Resources"]["/XObject"]
+    filters = {xobj[name].get_object().get("/Filter") for name in xobj}
+    assert filters == {"/DCTDecode"}
+    # Small or already-JPEG images are left alone; quality is validated by the exporter.
+    assert recompress_images(out, quality=80) == out
+
+
+def test_image_quality_is_validated(tmp_path: Path):
+    with pytest.raises(ValueError, match="image_quality"):
+        ehp.export_canvas_pdf(TEMPLATE, tmp_path / "x.pdf", image_quality=101)
+
+
 def test_verify_pdf_checks_count_and_size(tmp_path: Path):
     img2pdf = pytest.importorskip("img2pdf")
 
@@ -342,6 +368,13 @@ def test_browser_export_template_with_notes(stub_deck: Path):
     assert "patch half expires" in texts[4]
     assert "6.2" in texts[6] and "18.7" in texts[6]
     assert "Handout row" in texts[8] and not any("Handout row" in t for t in texts[:8])
+    # Effects that PDF viewers render differently were re-drawn as images: the split card's
+    # blurred shadows, its hatched background and the SVG hatch patterns of the bar chart.
+    assert result.flattened["shadows"] > 0
+    assert result.flattened["gradients"] > 0
+    assert result.flattened["patterns"] == 2
+    raw = result.output.read_bytes()
+    assert b"/Luminosity" not in raw  # no luminosity soft masks left for Preview to mis-render
     annots = [a.get_object() for a in reader.pages[8].get("/Annots", [])]
     assert any(a.get("/A", {}).get("/URI") == "https://example.com/further-reading" for a in annots)
     if result.contact_sheets:
