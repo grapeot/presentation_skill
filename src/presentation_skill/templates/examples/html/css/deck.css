@@ -374,3 +374,5 @@ body { font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: anti
 .duty { border-top: 1px solid var(--rule); padding: 22px 0 24px; display: grid; grid-template-columns: 64px 1fr; font: 400 36px/1.25 var(--serif); }
 .duty .n { font: 500 20px/2 var(--mono); color: var(--ink-3); }
 
+/* touch: no double-tap zoom (pinch zoom stays); taps and swipes navigate (js/engine.js) */
+html, body { touch-action: manipulation; }

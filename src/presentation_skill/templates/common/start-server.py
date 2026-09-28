@@ -12,6 +12,8 @@ from livereload import Server
 def start_server(port=8080, host='localhost', open_browser=True):
     """Start HTTP server with live reload."""
     server = Server()
+    # Always serve the current files, so a phone refresh picks up edits.
+    server.setHeader('Cache-Control', 'no-store')
 
     server.watch('*.html')
     server.watch('*.css')

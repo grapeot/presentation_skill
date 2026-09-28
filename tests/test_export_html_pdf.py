@@ -271,13 +271,26 @@ REVEAL_STUB = """
 (function () {
   const handlers = {}; let h = 0, f = -1, ready = false;
   const fire = ev => (handlers[ev] || []).forEach(cb => cb({}));
+  const sections = () => [...document.querySelectorAll(".reveal .slides > section")];
+  const frags = i => sections()[i].querySelectorAll(".fragment").length;
   window.Reveal = {
-    initialize() { setTimeout(() => { ready = true; fire("ready"); }, 0); return Promise.resolve(); },
+    initialize() {
+      const deep = parseInt(location.hash.split("/")[1], 10); if (deep >= 0) h = deep;   // "#/2" deep links
+      setTimeout(() => { ready = true; fire("ready"); }, 0); return Promise.resolve();
+    },
     on(ev, cb) { (handlers[ev] = handlers[ev] || []).push(cb); },
     isReady() { return ready; },
     getIndices() { return { h, v: 0, f: f < 0 ? undefined : f }; },
-    getSlides() { return [...document.querySelectorAll(".reveal .slides > section")]; },
+    getSlides() { return sections(); },
     slide(nh, v, nf) { const moved = nh !== h; h = nh; f = nf == null ? -1 : nf; fire(moved ? "slidechanged" : "fragmentshown"); },
+    next() {
+      if (f < frags(h) - 1) { f++; fire("fragmentshown"); }
+      else if (h < sections().length - 1) { h++; f = -1; fire("slidechanged"); }
+    },
+    prev() {
+      if (f >= 0) { f--; fire("fragmenthidden"); }
+      else if (h > 0) { h--; f = frags(h) - 1; fire("slidechanged"); }
+    },
   };
 })();
 """
