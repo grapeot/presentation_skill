@@ -6,9 +6,9 @@ from enum import Enum
 
 class DeckMode(str, Enum):
     IMAGE = "image"
-    REVEAL = "reveal"
-    # Kept for callers that imported the pre-Reveal name directly.
     HTML = "html"
+    # Compatibility alias: this mode was briefly called "reveal".
+    REVEAL = "reveal"
 
 
 class AssetPolicy(str, Enum):
@@ -18,7 +18,7 @@ class AssetPolicy(str, Enum):
     MIXED = "mixed"
 
 
-REVEAL_TRIGGERS = (
+HTML_TRIGGERS = (
     "no image generation",
     "without image generation",
     "avoid image generation",
@@ -28,6 +28,8 @@ REVEAL_TRIGGERS = (
     "interactive deck",
     "reveal.js",
     "reveal deck",
+    "html deck",
+    "canvas deck",
     "exact copy",
     "exact text",
     "editable deck",
@@ -70,8 +72,8 @@ class SlideSpec:
 
 def choose_mode(user_request: str) -> DeckMode:
     normalized = user_request.casefold()
-    if any(trigger in normalized for trigger in REVEAL_TRIGGERS):
-        return DeckMode.REVEAL
+    if any(trigger in normalized for trigger in HTML_TRIGGERS):
+        return DeckMode.HTML
     return DeckMode.IMAGE
 
 
@@ -124,7 +126,7 @@ def build_deck_plan(
     if errors:
         raise ValueError("invalid deck plan: " + "; ".join(errors))
 
-    canonical_mode = DeckMode.REVEAL if mode == DeckMode.HTML else mode
+    canonical_mode = DeckMode.HTML if mode == DeckMode.REVEAL else mode
     policy = asset_policy or (
         AssetPolicy.GENERATED if canonical_mode == DeckMode.IMAGE else AssetPolicy.MIXED
     )

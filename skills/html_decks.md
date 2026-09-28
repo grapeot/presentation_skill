@@ -1,10 +1,10 @@
-# Reveal Mode: the Courseware Canvas
+# HTML Mode: the Canvas Deck
 
-Reveal mode builds a lecture or talk as **one continuous, animated sheet**. Reveal.js still provides the clicks, fragments, speaker notes and the speaker view, but the entire picture lives on a single world layer. Frames sit on it side by side, a camera moves smoothly between them, and on each click elements are drawn, arrive, change state, or split. In practice, the result should read like one printed publication that moves, rather than a traditional stack of slides.
+HTML mode generates the deck as a web page: **one continuous, animated sheet** without slide borders. The agent writes the picture directly in HTML, CSS and SVG. It works for a keynote, a lecture, a pitch, a product walkthrough or an explainer alike. Reveal.js is only the plumbing underneath (clicks, speaker notes and the speaker view); the entire picture lives on a single world layer. Frames sit on it side by side, a camera moves smoothly between them, and on each click elements are drawn, arrive, change state, or split. In practice, the result should read like one printed publication that moves, rather than a traditional stack of slides.
 
 This setup was designed for Claude Opus 5.5 as the builder; other models are untested (GPT-6 Astra is the suggested alternative).
 
-This replaces our earlier Reveal mode, where every slide was a separate static page of DOM cards. That design existed because coding agents used to be weak at SVG, motion and layout. Today, a capable agent can own the whole picture, and should.
+This replaces our earlier HTML mode, where every slide was a separate static page of DOM cards. That design existed because coding agents used to be weak at SVG, motion and layout. Today, a capable agent can own the whole picture, and should.
 
 ## Acceptance criteria
 
@@ -39,7 +39,7 @@ This replaces our earlier Reveal mode, where every slide was a separate static p
 |---|---|
 | `js/deck.js` | The slide table in speaking order: `id`, running-header `part`, `steps` (clicks), and optional `cam` |
 | `tools/build_index.py` | The frames; regenerates the block between `FRAMES:BEGIN` and `FRAMES:END` in `index.html` |
-| `js/engine.js` | Reveal sections and notes, frame layout, camera movement, and state application |
+| `js/engine.js` | Navigation and notes (via Reveal.js), frame layout, camera movement, and state application |
 | `js/copy.js` | The writer's copy, generated from `copy/copy.md` by `tools/copy_to_js.py` |
 | `css/deck.css` | Design tokens along with the motion and component vocabulary |
 
@@ -63,9 +63,19 @@ Here is the run order when editing: change the builder or `deck.js` → `python3
 - **Split card**: A card cracks on the beat that names the split; the lasting half stays and the expiring half tilts away (`.specimen`). A reversed variant also exists for when the left half is the one that expires.
 - **Camera push-in** of about 5–8% while a detail is discussed keeps a long hold alive.
 
+## SVG: the deck's drawing layer
+
+Most of what moves in a canvas deck is hand-written SVG, not generated pixels. The agent writes it inline in `tools/build_index.py`, so every line, label and number stays exact and animatable.
+
+- **Use SVG for anything with structure**: diagrams, pipelines, timelines, charts, arrows, brackets, callout circles, cracks and connectors. These draw on with the pen, and their labels are real `<text>`.
+- **Use generated plates for material**: engravings, objects and scenes that give a metaphor weight. The template's `imgs/cpu-blueprint.svg` shows the middle ground, a line illustration kept as an SVG file and inked in like a plate.
+- **Keep SVG in the deck's register**: stroke in the ink colour, use the two accent colours only where they carry meaning, and fill areas with hatching patterns rather than gradients. Set `pathLength="1"` on any path that should draw on.
+- **Size text in SVG user units that match the frame** (one unit = one pixel at 1080p), so the readability limits above still apply.
+- **Draw tension as tension.** A spring, a strained line or a bar pushing past its old ghost says more than a labelled box.
+
 ## Composition guidance
 
-- Frame content box: x 160–1760, y 130–950. The running header and footer (course, part, speaker, folio) sit outside it and give the publication feel.
+- Frame content box: x 160–1760, y 130–950. The running header and footer (event or series, part, speaker, folio) sit outside it and give the publication feel. Drop them if the occasion calls for a cleaner stage.
 - Keep one primary relationship per frame. A claim is a headline, never a small grey eyebrow.
 - A visual device that recurs across frames must look identical every time it returns (the same card, the same question pair, the same ladder).
 - Text never sits on top of a plate that is being read; retire the plate while text beats run.

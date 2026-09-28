@@ -18,7 +18,7 @@ uv pip install --python .venv/bin/python -e '.[dev]'  # dev includes PDF and Pil
 
 Covers `deck_plan.py`:
 
-- `choose_mode()` defaults to image; exact/editable/interactive phrases select Reveal mode
+- `choose_mode()` defaults to image; exact/editable/interactive phrases select HTML mode
 - `choose_asset_policy()` separates generated, exact, mixed, and no-asset requests from rendering mode
 - `validate_deck_plan()` catches empty plans, duplicate slide numbers, non-sequential numbering, missing titles, short claims/visual roles
 - `build_deck_plan()` renders expected markdown and raises on invalid input
@@ -28,8 +28,8 @@ Covers `deck_plan.py`:
 Covers end-to-end CLI via `scripts/presentation-skill`:
 
 - `--help` renders
-- `--mode image` creates root image deck + `examples/reveal/` + `README.md`
-- `--mode reveal` creates a registry-based Reveal deck + generated-icon fixture + `examples/image/`
+- `--mode image` creates root image deck + `examples/html/` + `README.md`
+- `--mode html` (alias `reveal`) creates the canvas deck + generated-icon fixture + `examples/image/`
 - `--mode html` remains a Reveal compatibility alias
 
 ### `tests/test_asset_prep.py`

@@ -37,17 +37,17 @@ def test_script_creates_image_starter(tmp_path: Path):
     assert (out / "deck_plan.md").exists()
     assert (out / "visual_guideline.md").exists()
     assert (out / "README.md").exists()
-    assert (out / "examples" / "reveal" / "index.html").exists()
+    assert (out / "examples" / "html" / "index.html").exists()
 
 
-def test_script_creates_reveal_starter(tmp_path: Path):
+def test_script_creates_html_starter(tmp_path: Path):
     out = tmp_path / "deck"
     subprocess.run(
         [
             str(ROOT / "scripts" / "presentation-skill"),
             "Interactive demo",
             "--mode",
-            "reveal",
+            "html",
             "--assets",
             "generated",
             "--output",
@@ -69,18 +69,18 @@ def test_script_creates_reveal_starter(tmp_path: Path):
     assert (out / "examples" / "image" / "index.html").exists()
     assert (out / "examples" / "image" / "generated_slides" / "slide_01_0.jpg").exists()
     plan = (out / "deck_plan.md").read_text(encoding="utf-8")
-    assert "Mode: reveal" in plan
+    assert "Mode: html" in plan
     assert "Asset policy: generated" in plan
 
 
-def test_html_mode_is_a_reveal_compatibility_alias(tmp_path: Path):
+def test_reveal_mode_is_an_html_compatibility_alias(tmp_path: Path):
     out = tmp_path / "deck"
     subprocess.run(
         [
             str(ROOT / "scripts" / "presentation-skill"),
             "Legacy request",
             "--mode",
-            "html",
+            "reveal",
             "--output",
             str(out),
         ],
@@ -89,7 +89,7 @@ def test_html_mode_is_a_reveal_compatibility_alias(tmp_path: Path):
         capture_output=True,
         check=True,
     )
-    assert "Mode: reveal" in (out / "deck_plan.md").read_text(encoding="utf-8")
+    assert "Mode: html" in (out / "deck_plan.md").read_text(encoding="utf-8")
 
 
 def test_script_prepares_transparent_asset(tmp_path: Path):

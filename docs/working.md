@@ -105,3 +105,10 @@
 - `examples/html/` renamed to `examples/reveal/`; `js/slides/` modules and `slideModule.js` are gone from the reveal scaffold (live content uses `DECK_HOOKS`).
 - Lessons come from a real 40-slide, ~51-minute guest lecture built with this workflow (traps table in `reveal_decks.md`).
 - Validation: offline pytest suite; scaffolded a reveal deck from the CLI, vendored it, and ran `tools/shoot.py`.
+
+## 2026-09-28 — HTML is the mode name; the canvas is not only for courseware
+
+- Canonical mode is `html` again (`DeckMode.HTML`, `write_html_mode_starter`, `Mode: html`); `reveal` stays as a compatibility alias in the CLI, enum and starter. Reveal.js is described as plumbing (navigation, notes, speaker view), not the mode.
+- `examples/reveal/` → `examples/html/`; `skills/reveal_decks.md` → `skills/html_decks.md`.
+- Dropped "courseware" framing: the canvas is a borderless animated sheet for keynotes, lectures, pitches, walkthroughs and explainers. Template chrome reads "Event · Talk title".
+- Added an SVG section to `html_decks.md`: structure (diagrams, charts, connectors) is hand-written inline SVG in the deck's register; plates carry material.

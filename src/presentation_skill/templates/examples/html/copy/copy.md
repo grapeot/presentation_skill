@@ -1,5 +1,5 @@
 ## title
-subtitle: A reference deck for the courseware canvas mode
+subtitle: A reference deck for the HTML canvas mode
 
 ### notes
 This deck shows the vocabulary of the canvas mode. Every click either draws something, changes something in place, or moves the camera.

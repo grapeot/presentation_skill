@@ -58,9 +58,9 @@ GPT Image 2.5 accepts **multiple** input images in one call, so slides can refer
 - Asset-dependent slides use real source assets, not hallucinated logos or QR codes
 - Deck has a preview path and speaker notes
 
-## Reveal Deck Contract
+## HTML Deck Contract
 
-Reveal mode keeps exact content and layout in the DOM while allowing generated icons and diagrams as local assets. Read [reveal_decks.md](reveal_decks.md) and [generated_assets.md](generated_assets.md) for the full contracts.
+HTML mode keeps exact content and layout in the DOM and SVG while allowing generated plates and icons as local assets. Read [html_decks.md](html_decks.md) and [generated_assets.md](generated_assets.md) for the full contracts.
 
 ### Acceptance criteria
 
@@ -94,10 +94,10 @@ deck_work/
   tools/
   start-server.py
   css/  js/
-  examples/reveal/       # canvas-mode reference deck
+  examples/html/         # canvas-mode reference deck
 ```
 
-**Reveal mode (`--mode reveal`; `html` remains a compatibility alias) — courseware canvas:**
+**HTML mode (`--mode html`; `reveal` remains a compatibility alias) — canvas:**
 
 ```
 deck_work/
@@ -105,14 +105,14 @@ deck_work/
   deck_plan.md
   index.html             # stage, world and chrome; frames generated between FRAMES:BEGIN/END
   js/deck.js             # slide table: id, part, steps, camera
-  js/engine.js           # Reveal sections + notes, frame layout, camera, state per (slide, step)
+  js/engine.js           # navigation + notes (Reveal.js), frame layout, camera, state per (slide, step)
   js/copy.js             # generated from copy/copy.md
   css/deck.css           # tokens, motion and component vocabulary
   copy/                  # writer packet templates + copy.md
   tools/build_index.py   # the frames (edit here, then run)
   tools/copy_to_js.py    # copy.md -> js/copy.js
   tools/shoot.py         # screenshot every step, contact sheets, offline/error report
-  tools/vendor.mjs       # npm run vendor: Reveal + fonts into vendor/
+  tools/vendor.mjs       # npm run vendor: Reveal.js + fonts into vendor/
   package.json
   imgs/                  # plates (ink on transparent) and exact assets
   visual_guideline.md
@@ -141,7 +141,7 @@ The skill is installed when:
 
 | Situation | Action |
 |-----------|--------|
-| Image generation unavailable | State blocker; keep source artifacts complete; ask for credentials or switch composition to Reveal only if user allows |
+| Image generation unavailable | State blocker; keep source artifacts complete; ask for credentials or switch composition to HTML only if user allows |
 | Garbled generated text | Simplify visible text, increase typographic emphasis, or textless background + HTML/CSS overlay |
 | Visual drift across slides | Stop per-slide style variations; strengthen shared visual direction |
 

@@ -3,9 +3,9 @@ name: presentation
 description: >-
   Creates presentation slide decks for AI agents. Defaults to image-generated
   full-slide visuals (outline_visual.md, visual_guideline.md, Reveal.js viewer).
-  Also builds Reveal-mode "courseware canvas" decks: one animated sheet with a
-  camera, elements drawn or split on each click, textless engraving plates, and
-  copy drafted by a writing model and fact-checked by the builder. Use for slide
+  Also builds HTML canvas decks: one borderless animated sheet with a camera,
+  written in HTML, CSS and SVG, elements drawn or split on each click, textless
+  plates, and copy drafted by a writing model and fact-checked by the builder. Use for slide
   decks, keynotes, lectures, teaching decks, speaker notes, or presentation scaffolds.
 ---
 
@@ -17,15 +17,15 @@ Our main objective is to deliver a previewable slide deck directory where every 
 
 ## Model
 
-We designed and validated the Reveal (canvas) workflow specifically with Claude Opus 5.5 in the builder role. In practice, Opus handles writing the engine code, generating the SVG assets, choreographing motion and layout, and executing all the automated checks. Other models haven't been tested here and are prone to degradation—particularly when it comes to orchestrating motion, dialing in layouts, or sticking faithfully to the verification loop. If you aren't running Opus, GPT-6 Astra is our recommended alternative. Image mode, on the other hand, is far less sensitive to your choice of builder model since full-slide visual composition is handed off directly to the underlying image model.
+We designed and validated the HTML (canvas) workflow specifically with Claude Opus 5.5 in the builder role. In practice, Opus handles writing the engine code, generating the SVG assets, choreographing motion and layout, and executing all the automated checks. Other models haven't been tested here and are prone to degradation—particularly when it comes to orchestrating motion, dialing in layouts, or sticking faithfully to the verification loop. If you aren't running Opus, GPT-6 Astra is our recommended alternative. Image mode, on the other hand, is far less sensitive to your choice of builder model since full-slide visual composition is handed off directly to the underlying image model.
 
 ## Boundaries
 
-**In scope:** Comprehensive deck planning, establishing visual direction, generating slide images, building animated canvas presentations on Reveal.js, crafting local generated plates and iconography, drafting on-screen copy and speaker notes (collaborating with a dedicated writer model whenever available), automated screenshot verification, running independent critic reviews, and serving local previews.
+**In scope:** Comprehensive deck planning, establishing visual direction, generating slide images, building animated HTML canvas presentations, crafting local generated plates and iconography, drafting on-screen copy and speaker notes (collaborating with a dedicated writer model whenever available), automated screenshot verification, running independent critic reviews, and serving local previews.
 
 **Out of scope:** Modifying PPTX files, writing open-ended image prompts, and running generic design review checklists. Making raw calls to image generation APIs is the responsibility of the workspace where this skill gets installed (frequently via `image-generation-skill`), rather than this repository.
 
-**Mode rule:** Always default to **image** mode. You should switch to **reveal** mode (our courseware canvas workflow detailed in [reveal_decks.md](reveal_decks.md)) whenever the user explicitly requests an HTML presentation, a lecture or talk that incorporates rich motion, fully editable or exact text copy, code blocks, live data feeds, clickable hyperlinks, multi-step progressive builds, or when they want to avoid full-slide image generation entirely. Keep in mind that your rendering mode and your asset policy are completely separate choices: a Reveal deck typically takes advantage of generated illustration plates, so when a user asks for "no image generation", what you actually want is `reveal` configured with `assets: none`. Crucially, you must never silently downgrade image → reveal simply because image generation encounters an error.
+**Mode rule:** Always default to **image** mode. You should switch to **html** mode (the canvas workflow detailed in [html_decks.md](html_decks.md)) whenever the user explicitly requests an HTML presentation, a deck that incorporates rich motion, fully editable or exact text copy, code blocks, live data feeds, clickable hyperlinks, multi-step progressive builds, or when they want to avoid full-slide image generation entirely. Keep in mind that your rendering mode and your asset policy are completely separate choices: an HTML deck typically takes advantage of generated illustration plates, so when a user asks for "no image generation", what you actually want is `html` configured with `assets: none`. Crucially, you must never silently downgrade image → html simply because image generation encounters an error.
 
 ## Acceptance criteria
 
@@ -34,7 +34,7 @@ A deck is considered **done** only when all of the following requirements hold. 
 **Directory & plan**
 
 - Your `deck_plan.md` must clearly state the mode, audience, thesis, and a slide list where each entry specifies one claim and an intentional visual role.
-- Speaker notes must exist (in image mode: `speaker_notes.md`; in reveal mode: under the `### notes` sections in `copy/copy.md`, which surface in the speaker view). These notes need to provide spoken context rather than simply parroting on-screen text, and they must satisfy the [speaker-notes spoken-delivery contract](speaker_notes.md).
+- Speaker notes must exist (in image mode: `speaker_notes.md`; in html mode: under the `### notes` sections in `copy/copy.md`, which surface in the speaker view). These notes need to provide spoken context rather than simply parroting on-screen text, and they must satisfy the [speaker-notes spoken-delivery contract](speaker_notes.md).
 - A validation note must record exactly what was previewed and detail any items that remain unresolved.
 - If a distribution PDF is requested for an image deck, it must be generated using `scripts/presentation-skill export-pdf` (ensuring the compatibility gate passes and the link count strictly matches the overlay plan)—never by printing directly from a web browser.
 
@@ -51,9 +51,9 @@ A deck is considered **done** only when all of the following requirements hold. 
 - Brand logos, scannable QR codes, software screenshots, and tabular data must always draw from real image files saved in `imgs/`—you must never ask the generative image model to invent them.
 - All text rendered on slides must be crisp and easily legible; any garbled or distorted characters represent an outright failure (fix this by streamlining your copy, running another render, or layering exact HTML/CSS typography over top).
 
-**Reveal mode (courseware canvas)**
+**HTML mode (canvas)**
 
-- The presentation must satisfy every single criterion laid out in [reveal_decks.md](reveal_decks.md): operating on a single world canvas steered by a camera, maintaining state that depends strictly on the current (slide, step) coordinate, employing animations that actively support the argument, sticking to one consistent visual register, and remaining easily readable when projected or shared on screen.
+- The presentation must satisfy every single criterion laid out in [html_decks.md](html_decks.md): operating on a single world canvas steered by a camera, maintaining state that depends strictly on the current (slide, step) coordinate, employing animations that actively support the argument, sticking to one consistent visual register, and remaining easily readable when projected or shared on screen.
 - All slide copy must adhere to the process outlined in [copy_workflow.md](copy_workflow.md): drafted by a dedicated writing model whenever one is available (or by the builder working against those exact same contracts), with every single drift correction tracked in `validation.md`.
 - Illustration plates must follow [generated_assets.md](generated_assets.md): locked into a single cohesive aesthetic, completely free of text, and rendered as crisp ink over a transparent background.
 - Automated runs of `tools/shoot.py` must report zero console errors, zero failed requests, zero requests attempting to leave localhost, and zero unfilled slots; furthermore, at least one [critic round](critic_review.md) must be completed and stored under `verification/critic/`.
@@ -68,7 +68,7 @@ A deck is considered **done** only when all of the following requirements hold. 
 
 ```bash
 bash scripts/presentation-skill "Topic" --mode image --output deck_work
-bash scripts/presentation-skill "Topic" --mode reveal --assets mixed --output deck_work
+bash scripts/presentation-skill "Topic" --mode html --assets mixed --output deck_work
 bash scripts/presentation-skill "Topic" --request "HTML only, no image generation" --output deck_work
 ```
 
@@ -83,10 +83,10 @@ This pipeline compiles the PDF directly from the high-resolution slide images (l
 
 Once initialization wraps up, read `deck_work/README.md`. You will find the active mode files sitting right at the deck root, while the alternate mode lives under `examples/`.
 
-**Reveal (canvas) loop** (inside a reveal scaffold):
+**HTML (canvas) loop** (inside an html scaffold):
 
 ```bash
-npm install && npm run vendor            # Reveal + fonts into vendor/ (runs offline afterwards)
+npm install && npm run vendor            # Reveal.js + fonts into vendor/ (runs offline afterwards)
 python3 tools/build_index.py             # regenerate frames from the builder
 python3 tools/copy_to_js.py              # copy/copy.md -> js/copy.js (prints spoken minutes)
 python3 tools/shoot.py --out verification/round1   # every step, contact sheets, offline/error report
@@ -122,7 +122,7 @@ Whenever a slide requires a combination of visual assets—like a navigation bar
 | Mode | Root artifacts |
 |---|---|
 | image | `outline_visual.md`, `visual_guideline.md`, `generated_slides/`, `tools/`, image `index.html` |
-| reveal | `index.html`, `js/deck.js`, optional `js/slides/*.js`, `imgs/`, `visual_guideline.md` |
+| html | `index.html`, `js/deck.js`, `js/engine.js`, `tools/build_index.py`, `copy/`, `imgs/`, `visual_guideline.md` |
 
 ## Methodology (suggestions, not mandatory order)
 
@@ -130,9 +130,9 @@ Whenever a slide requires a combination of visual assets—like a navigation bar
 - If you are writing direct-read presentation scripts or carrying out major speaker-note revisions, load [speaker_notes.md](speaker_notes.md). It establishes the breath test, natural transition handoffs, the factual-fidelity gate, and batch review practices for long decks.
 - When creating image decks, establish visual consistency early through `visual_guideline.md` along with shared style reference assets, and only trigger image generation once the outline copy is firmly locked in.
 - For text-heavy image slides, keep title zones wide, put a ceiling on visible labels, and explicitly instruct the model to use normal-width typography. Placing long blocks of copy inside narrow columns frequently tempts image models to simulate condensed fonts or horizontally compress character shapes.
-- For Reveal presentations, plan out your entire canvas sheet (defining frames, deciding what shifts on each click, and establishing recurring visual motifs) before writing markup; address slides by their semantic id, and make sure to read [reveal_decks.md](reveal_decks.md), [copy_workflow.md](copy_workflow.md) and [critic_review.md](critic_review.md).
+- For HTML presentations, plan out your entire canvas sheet (defining frames, deciding what shifts on each click, and establishing recurring visual motifs) before writing markup; address slides by their semantic id, and make sure to read [html_decks.md](html_decks.md), [copy_workflow.md](copy_workflow.md) and [critic_review.md](critic_review.md).
 - Audit every single example against your target audience before building: retain a reference only if it helps these specific listeners understand faster or believe more, not simply because it was present in the source material.
-- In Reveal mode, bring in illustration plates only when the visual metaphor actively carries the argument; empty white space on its own is never a reason to tack on decorative elements.
+- In HTML mode, draw structure (diagrams, charts, connectors) as inline SVG, and bring in illustration plates only when the visual metaphor actively carries the argument; empty white space on its own is never a reason to tack on decorative elements.
 - Prefer the workspace's dedicated image-generation skill whenever it is available.
 - When building image decks that display URLs, QR codes, or interactive embeds, add a clickable HTML overlay layer as outlined in [docs/clickable_overlays.md](../docs/clickable_overlays.md)—define the target zone in the prompt, measure the rendered element's bounding box using computer vision, inject padded `<a>` or iframe hotzones, and verify alignment with a draw-back visual check.
 
@@ -142,12 +142,12 @@ Whenever a slide requires a combination of visual assets—like a navigation bar
 |---|---|---|
 | Wrong install path | An agent tries to load a stale `.agents/skills/` directory or an injected path that simply does not exist | Make sure you follow the installing workspace's skill index or `WORKSPACE.md`. The canonical repo skill lives at `skills/skill_presentation.md` in the `presentation_skill` package. |
 | Treating Python helpers as an AI planner | Assuming `deck_plan.py` or the CLI will write slide content for you | Remember that Python scripts only set up directory scaffolds and enforce validation rules. The agent is responsible for writing `deck_plan.md`, drafting outlines, and authoring modules. |
-| Silent mode downgrade | When the image generation API errors out, the agent quietly falls back to Reveal mode without checking | Stop immediately and explain the blocker; keep your source artifacts intact, and only change modes if the user explicitly authorizes it. |
+| Silent mode downgrade | When the image generation API errors out, the agent quietly falls back to HTML mode without checking | Stop immediately and explain the blocker; keep your source artifacts intact, and only change modes if the user explicitly authorizes it. |
 | Model-invented text | The model generates unscannable QR codes, garbled alien glyphs, or made-up corporate logos | Place exact pixel assets in `imgs/` and reference them through the outline Asset sections; always define exact, readable copy directly in your prompts. |
 | Internal constraints painted onto slides | A prompt includes instructions like "no private numbers" or "public data only", and the model visibly paints those caveats right onto the slide canvas | Keep negative constraints completely separate from visible text. Frame rules as "Do not render any text about X" and explicitly list the exact headings and labels the model is permitted to draw. |
 | Horizontally squeezed typography | Lengthy titles or card labels appear uncomfortably narrow or horizontally compressed, particularly inside fixed-width columns | Trim the visible wording, let the title span full width, and explicitly add: "Use normal-width Inter or Helvetica-style sans-serif, not condensed. Do not horizontally scale or compress letters; reduce font size or wrap at word boundaries." If the problem persists, move the text into an HTML/CSS overlay. |
-| Confusing composition with assets | Treating a Reveal slide as an image-mode slide just because it incorporates a generated plate | Assign exactly one composition owner to each slide: Reveal controls geometry and exact copy, while generated plates play a supporting visual role. |
-| Canvas-specific traps | Encountering white boxes around engravings, stage overlays that never disappear, climax shots pulled back to thumbnail size, or numbered slide references | Consult the comprehensive traps table in [reveal_decks.md](reveal_decks.md). |
+| Confusing composition with assets | Treating an HTML slide as an image-mode slide just because it incorporates a generated plate | Assign exactly one composition owner to each slide: the HTML controls geometry and exact copy, while generated plates play a supporting visual role. |
+| Canvas-specific traps | Encountering white boxes around engravings, stage overlays that never disappear, climax shots pulled back to thumbnail size, or numbered slide references | Consult the comprehensive traps table in [html_decks.md](html_decks.md). |
 | Decorative asset filling | Spotting empty space on a slide and dropping in arbitrary icons that distract from your core message | Only introduce an asset when it genuinely speeds up comprehension, differentiates parallel concepts, or clarifies an underlying mechanism. |
 | Skipping examples | Newly authored slides drift away from the contracts established by the scaffold | Take time to read the root scaffold files and browse through `examples/` before writing; model your new slides directly on those proven patterns. |
 | Preview without server | Attempting to open `index.html` directly with the `file://` protocol, which breaks ES modules and CDN dependencies | Always run `start-server.py` to preview the deck, and switch to an alternative port if default ports are occupied. |
@@ -165,7 +165,7 @@ Whenever a slide requires a combination of visual assets—like a navigation bar
 ## Additional resources
 
 - If you need detailed contracts, directory layouts, and setup instructions, head over to [reference.md](reference.md).
-- To dive deep into the canvas contract, internal engine mechanics, and edge cases, take a look at [reveal_decks.md](reveal_decks.md).
+- To dive deep into the canvas contract, internal engine mechanics, and edge cases, take a look at [html_decks.md](html_decks.md).
 - For a breakdown of how the writer and builder divide up responsibilities and catch factual drift, read [copy_workflow.md](copy_workflow.md).
 - To see how to run an independent visual review on your rendered frames, check out [critic_review.md](critic_review.md).
 - When you are creating icons or conceptual illustrations to support your slides, refer to [generated_assets.md](generated_assets.md).

@@ -1,4 +1,4 @@
-/* Courseware canvas engine.
+/* HTML canvas engine.
    Reveal owns navigation, fragments, notes and speaker view (press S).
    The picture is one world div: frames are laid out on a long sheet in slide order and a camera moves between them.
    Every element's state is a pure function of (slide, step), so back, jump and reload are exact.
