@@ -32,6 +32,7 @@ This replaces our earlier HTML mode, where every slide was a separate static pag
 - `tools/shoot.py` must have screenshotted every step: zero console errors, zero failed requests, zero requests leaving localhost (the deck runs offline), and zero unfilled slots.
 - You must complete at least one independent critic round per [critic_review.md](critic_review.md), with its review saved under `verification/critic/`.
 - The speaker view (press S) must open and show notes.
+- If a PDF handout is part of the deliverable, `export-pdf` must pass its checks and its contact sheet must show every slide at a complete print state (see "PDF handout").
 
 ## The engine (in the scaffold)
 
@@ -80,6 +81,16 @@ Most of what moves in a canvas deck is hand-written SVG, not generated pixels. T
 - A visual device that recurs across frames must look identical every time it returns (the same card, the same question pair, the same ladder).
 - Text never sits on top of a plate that is being read; retire the plate while text beats run.
 
+## PDF handout
+
+`scripts/presentation-skill export-pdf <deck>` turns the deck into a PDF with one page per slide. It serves the deck on a private loopback port, opens it in headless Chromium at 1920×1080 with screen media (Reveal's print stylesheet never applies), switches off transitions and CSS animations, and calls `deckGoto(i, step)` for each slide's print state. It waits until the page stops changing, then prints that state as one 1920×1080 page with backgrounds. The pages are merged into one PDF, with resources that repeat across pages (a grain layer, a recurring plate) stored once. Text stays vector and searchable, and `<a href>` elements become PDF links.
+
+- **Print state.** By default this is the slide's last step. To print another step, set `print` on the slide entry, e.g. `S("board", P2, 5, null, { print: 3 })` with the scaffold's `S` helper. An invalid `print` value fails the export.
+- **Handout layout.** Some slides hide information in every single state: a split-flap board that shows one year at a time, or a card that replaces its own text. For these, write a dedicated handout arrangement in CSS. During export `<html>` carries the class `pdf-export` and the attributes `data-print-slide="<id>"` and `data-print-step="<n>"`, so a rule such as `html.pdf-export[data-print-slide="board"] .flap { … }` can print the board's years as rows. The rule never matches in the live deck.
+- **Speaker notes.** `--with-notes` follows every slide page with a notes page of the same size. The notes come from `window.COPY[id].notes`, or from the slide's Reveal `<aside class="notes">`. They are set in the deck's body font on its paper colour, in two columns, with a header naming the part, the slide number and the id. The font size shrinks from 30 px to 16 px to fit; notes that do not fit even at 16 px fail the export. A full page (rather than a band under the slide) keeps the slide at full size and keeps long scripts readable.
+- **Checks.** The export fails loudly when the page count does not match the slide table (plus the notes pages); when there is any console error, page error or failed local request, or any request leaves localhost; when a copy slot is unfilled (`.missing`); when a web font fails to load; or when a page is not exactly one 1920×1080 page. It also writes `<name>_contact_NN.jpg` next to the PDF (rendered with pymupdf or poppler's `pdftoppm`). Read it: every page should show the full print state, with nothing half-faded, clipped or blank, and in the deck's fonts.
+- **What it relies on.** Only the engine contract: `window.DECK`, `window.deckGoto(i, step)` applying state without animation, the `missing` class on unfilled slots, and `window.COPY`. It uses no template CSS classes, so decks with their own engine copy and stylesheet export the same way. Motion that is driven from JavaScript (`requestAnimationFrame` counters, `DECK_HOOKS` content) is given up to 4 s to settle; a page that never settles is printed as is, with a warning. An infinite idle animation is printed at its first frame.
+
 ## Known traps
 
 | Trap | What it looked like | Do this |
@@ -93,4 +104,5 @@ Most of what moves in a canvas deck is hand-written SVG, not generated pixels. T
 | Hand-placed frame coordinates | A reorder meant recomputing every `left:` | Let the engine lay out frames in slide order |
 | Harness and critic sharing a directory | A partial re-shoot overwrote the contact sheet the critic was reading | Give every critic round its own frozen `--out` directory |
 | Stale server port | The owner saw an older deck, or someone else's app, on the expected port | Check what is listening before starting the server; say which URL you started |
-| Browser print for handouts | Drops every state except one per slide, and all notes | A canvas deck has no stable pages. If a PDF handout is required, choose a print state per slide and export it deliberately. Not yet automated in this repo |
+| Browser print for handouts | Drops every state except one per slide, and all notes | A canvas deck has no stable pages. Run `scripts/presentation-skill export-pdf <deck> [--with-notes]`, which prints each slide's chosen state (see "PDF handout" above), then read the contact sheet |
+| Final state hides information | The printed page shows only the last beat: a flap board showing this year, a struck-through list without its replacement | Set `print: <step>` on the slide, or give the slide a handout layout under `html.pdf-export[data-print-slide="<id>"]` |

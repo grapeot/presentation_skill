@@ -1,8 +1,10 @@
 /* Slide table in speaking order. steps = clicks inside the slide (1 = no fragments).
    frame defaults to id; frames are laid out on the sheet in this order by js/engine.js.
-   cam (optional) = [dx, dy, zoom] relative to the frame centre, or one entry per step. */
+   cam (optional) = [dx, dy, zoom] relative to the frame centre, or one entry per step.
+   opts (optional) = extra fields, e.g. { print: 1 }: the step the PDF export prints for this slide
+   (default: the last step). */
 (function () {
-  const S = (id, part, steps, cam) => ({ id, part, steps, cam });
+  const S = (id, part, steps, cam, opts) => ({ id, part, steps, cam, ...opts });
   window.DECK = [
     S("title", "", 1),
     S("pipeline", "I · Draw it", 3),

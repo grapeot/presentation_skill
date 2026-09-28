@@ -13,7 +13,7 @@ _SUBCOMMANDS = {"init", "export-pdf", "prepare-asset"}
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="presentation-skill",
-        description="Presentation Skill helpers: scaffold decks, prepare assets, export image decks to PDF",
+        description="Presentation Skill helpers: scaffold decks, prepare assets, export decks to PDF",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -31,14 +31,36 @@ def build_parser() -> argparse.ArgumentParser:
 
     export = sub.add_parser(
         "export-pdf",
-        help="Export an image-mode deck (background images + notes + overlays) to a clickable PDF",
+        help="Export a deck to PDF: image decks from their slide images, HTML (canvas) decks through headless Chromium",
     )
     export.add_argument("deck_dir", help="Deck directory containing index.html")
-    export.add_argument("--output", default=None, help="Output PDF path (default: <deck_dir>/<name>.pdf)")
+    export.add_argument(
+        "--output",
+        default=None,
+        help="Output PDF path (default: image deck <deck_dir>/<name>.pdf; "
+        "HTML deck <deck_dir>/verification/handout.pdf or handout_with_notes.pdf)",
+    )
     export.add_argument(
         "--check-only",
         action="store_true",
-        help="Run the compatibility check and exit without writing a PDF",
+        help="Run the checks and exit without writing a PDF",
+    )
+    export.add_argument(
+        "--mode",
+        choices=["auto", "image", "html", "canvas"],
+        default="auto",
+        help="Exporter to use; auto picks html when the deck has js/engine.js and window.DECK "
+        "(canvas is an alias of html)",
+    )
+    export.add_argument(
+        "--with-notes",
+        action="store_true",
+        help="HTML decks: follow every slide page with a page of its speaker notes",
+    )
+    export.add_argument(
+        "--no-contact-sheet",
+        action="store_true",
+        help="HTML decks: skip the contact sheet written next to the PDF",
     )
 
     asset = sub.add_parser(
@@ -91,10 +113,28 @@ def _run_prepare_asset(args: argparse.Namespace) -> int:
     return 0
 
 
+def resolve_export_mode(mode: str, deck_dir: Path) -> str:
+    """'image' or 'html' for the export-pdf subcommand."""
+    from .export_html_pdf import is_canvas_deck
+
+    if mode == "canvas":
+        return "html"
+    if mode == "auto":
+        return "html" if is_canvas_deck(deck_dir) else "image"
+    return mode
+
+
 def _run_export_pdf(args: argparse.Namespace) -> int:
+    deck_dir = Path(args.deck_dir)
+    mode = resolve_export_mode(args.mode, deck_dir)
+    if mode == "html":
+        return _run_export_html_pdf(args, deck_dir)
+    if args.with_notes:
+        print("--with-notes applies to HTML (canvas) decks; image-deck PDFs carry no notes pages")
+        return 2
+
     from .export_pdf import CompatibilityError, check_compatibility, export_pdf
 
-    deck_dir = Path(args.deck_dir)
     if args.check_only:
         report = check_compatibility(deck_dir)
         if report.ok:
@@ -111,6 +151,35 @@ def _run_export_pdf(args: argparse.Namespace) -> int:
         print(exc)
         return 2
     print(f"{output} ({pages} pages, {links} links)")
+    return 0
+
+
+def _run_export_html_pdf(args: argparse.Namespace, deck_dir: Path) -> int:
+    from .export_html_pdf import HtmlExportError, MissingDependencyError, export_canvas_pdf
+
+    try:
+        result = export_canvas_pdf(
+            deck_dir,
+            Path(args.output) if args.output else None,
+            with_notes=args.with_notes,
+            contact_sheet=not args.no_contact_sheet,
+            check_only=args.check_only,
+        )
+    except MissingDependencyError as exc:
+        print(exc)
+        return 3
+    except HtmlExportError as exc:
+        print(exc)
+        return 2
+    for warning in result.warnings:
+        print(f"WARNING: {warning}")
+    if args.check_only:
+        print(f"ok: {result.slides} slides, print states checked, no errors, no external requests, no missing slots")
+        return 0
+    print(f"{result.output} ({result.pages} pages: {result.slides} slides"
+          + (f" + {result.slides} notes pages" if args.with_notes else "") + ")")
+    for sheet in result.contact_sheets:
+        print(f"contact sheet: {sheet}")
     return 0
 
 

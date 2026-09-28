@@ -30,6 +30,15 @@ scripts/presentation-skill "Technical briefing" --mode html --assets mixed --out
 
 `--mode reveal` remains a compatibility alias for `html`.
 
+## PDF Export
+
+```bash
+scripts/presentation-skill export-pdf deck                 # image deck: lossless PDF from the slide images, with clickable overlays
+scripts/presentation-skill export-pdf deck --with-notes    # HTML (canvas) deck: one page per slide, each followed by its notes
+```
+
+`export-pdf` picks the exporter from the deck. Image decks need the `[pdf]` extra. HTML (canvas) decks are printed through headless Chromium, one page per slide at a chosen print state (by default the slide's last step), with vector, selectable text. They need the `[pdf-html]` extra and `python -m playwright install chromium`. The HTML export fails on console errors, requests that leave localhost, unfilled copy slots or a page count that does not match the slide table, and writes a contact sheet next to the PDF. See `skills/html_decks.md`.
+
 ## Local Development
 
 ```bash
@@ -39,4 +48,4 @@ uv pip install --python .venv/bin/python -e '.[dev]'
 scripts/presentation-skill --help
 ```
 
-The tests are offline and validate the planning contract, starter artifact generation, and installation contract.
+The tests are offline and validate the planning contract, starter artifact generation, PDF export, and installation contract. The HTML PDF export tests drive a local headless Chromium when Playwright is installed (`uv pip install --python .venv/bin/python -e '.[dev,pdf-html]'` and `.venv/bin/python -m playwright install chromium`) and are skipped otherwise.

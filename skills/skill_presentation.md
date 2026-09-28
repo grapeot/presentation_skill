@@ -37,6 +37,7 @@ A deck is considered **done** only when all of the following requirements hold. 
 - Speaker notes must exist (in image mode: `speaker_notes.md`; in html mode: under the `### notes` sections in `copy/copy.md`, which surface in the speaker view). These notes need to provide spoken context rather than simply parroting on-screen text, and they must satisfy the [speaker-notes spoken-delivery contract](speaker_notes.md).
 - A validation note must record exactly what was previewed and detail any items that remain unresolved.
 - If a distribution PDF is requested for an image deck, it must be generated using `scripts/presentation-skill export-pdf` (ensuring the compatibility gate passes and the link count strictly matches the overlay plan)—never by printing directly from a web browser.
+- If a PDF handout is requested for an HTML (canvas) deck, it must also come from `scripts/presentation-skill export-pdf`, which prints one chosen state per slide through headless Chromium. The export must pass its checks (page count matches the slide table, zero console errors, zero requests leaving localhost, zero unfilled slots), and you must have looked at the contact sheet it writes next to the PDF: every page shows the full print state of its slide, with nothing half-faded, clipped or blank, and in the deck's own fonts.
 
 **Preview**
 
@@ -80,6 +81,16 @@ bash scripts/presentation-skill export-pdf deck_work --output deck_work/handout/
 ```
 
 This pipeline compiles the PDF directly from the high-resolution slide images (lossless, avoiding browser print quirks entirely) and embeds every `overlay-data` hotspot as a real PDF link annotation sharing the exact rect and padding of the HTML overlay, ensuring clicking works identically across PDF and HTML. The built-in compatibility gate requires every section to consist strictly of a background image plus speaker notes, failing loudly if anything violates that structure—so if it ever flags INCOMPATIBLE, you should fix the slide markup or fall back to manual export; never ship a silently lossy PDF. Note that this feature requires the `[pdf]` dependency extra (img2pdf + pypdf).
+
+**PDF export (HTML canvas decks: one page per slide, optional notes pages)**
+
+```bash
+bash scripts/presentation-skill export-pdf deck_work                 # -> deck_work/verification/handout.pdf + contact sheet
+bash scripts/presentation-skill export-pdf deck_work --with-notes    # -> verification/handout_with_notes.pdf
+bash scripts/presentation-skill export-pdf deck_work --check-only    # load, step through the print states, run the checks
+```
+
+A deck that has `js/engine.js` and a `window.DECK` slide table is exported through headless Chromium (`--mode html` forces this path, `--mode image` the other one). Each slide is printed at its last step unless its `js/deck.js` entry sets `print: <step>`. Transitions are switched off, so every page shows the settled state. Text stays vector and selectable, and DOM links stay clickable. The details, including a dedicated handout layout for slides whose final state hides information, are in [html_decks.md](html_decks.md). This path requires the `[pdf-html]` extra and a Chromium build (`python -m playwright install chromium`).
 
 Once initialization wraps up, read `deck_work/README.md`. You will find the active mode files sitting right at the deck root, while the alternate mode lives under `examples/`.
 
