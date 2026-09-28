@@ -10,8 +10,8 @@ def test_exactly_one_root_skill():
         "copy_workflow.md",
         "critic_review.md",
         "generated_assets.md",
+        "html_decks.md",
         "reference.md",
-        "reveal_decks.md",
         "skill_presentation.md",
         "speaker_notes.md",
     ]

@@ -7,7 +7,7 @@ This repository packages a public-safe presentation creation skill for AI coding
 The skill unifies two presentation modes:
 
 - Image-generated decks by default: the agent writes a deck plan, visual direction, and per-slide prompts, then uses the installing workspace's image generation capability to render full-slide images.
-- Reveal.js decks as a first-class alternative: exact content and composition stay in the DOM, while generated icons and diagrams may be used as bounded local assets. Static slides share a deck registry; only interactive slides need lifecycle modules.
+- HTML canvas decks as a first-class alternative: one borderless animated sheet written in HTML, CSS and SVG, with exact content in the DOM and generated plates as bounded local assets. Reveal.js only supplies navigation, notes and the speaker view.
 
 ## Working Environment
 

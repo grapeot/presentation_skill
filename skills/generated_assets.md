@@ -1,4 +1,4 @@
-# Generated Assets in Reveal Decks
+# Generated Assets in HTML Decks
 
 Generated assets are local visual components that live inside a DOM-composed slide. In practice, they work best as textless icons, conceptual diagrams, and illustrations that help distinguish peers or explain a mechanism much faster than prose.
 

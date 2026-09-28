@@ -1,6 +1,6 @@
 # Presentation Skill
 
-Presentation Skill helps AI coding agents create slide decks. It defaults to image-generated decks, where each slide is rendered as a complete visual scene. Reveal mode builds a "courseware canvas": one animated sheet with a camera, where diagrams draw themselves, cards split and numbers roll on each click, with exact copy in the DOM, textless generated plates, and copy drafted by a writing model and fact-checked by the builder.
+Presentation Skill helps AI coding agents create slide decks. It defaults to image-generated decks, where each slide is rendered as a complete visual scene. HTML mode generates the deck as a web page: one borderless, animated canvas with a camera, written in HTML, CSS and SVG, where diagrams draw themselves, cards split and numbers roll on each click, with exact copy in the DOM, textless generated plates, and copy drafted by a writing model and fact-checked by the builder.
 
 This repo is a public, platform-agnostic skill package. It works with agents such as OpenCode, Claude Code, Cursor, Codex, or any terminal coding agent that can read Markdown instructions and write files.
 
@@ -21,14 +21,14 @@ The root skill is `skills/skill_presentation.md`.
 
 Image-generated mode is the default. The agent creates a deck plan, a visual direction, slide prompts, local artifacts, and rendered images through the workspace's configured image generation tool.
 
-Reveal mode is a first-class alternative for lectures and talks that should move, and for decks that must keep exact copy, code, real data or links. See `skills/reveal_decks.md`. It was designed and validated with Claude Opus 5.5 as the builder; other models are untested (GPT-6 Astra is the suggested alternative). Rendering mode and asset policy are independent.
+HTML mode is a first-class alternative for talks, lectures, pitches and explainers that should move, and for decks that must keep exact copy, code, real data or links. See `skills/html_decks.md`. It was designed and validated with Claude Opus 5.5 as the builder; other models are untested (GPT-6 Astra is the suggested alternative). Rendering mode and asset policy are independent.
 
 ```bash
 scripts/presentation-skill "Visual keynote" --mode image --output deck
-scripts/presentation-skill "Technical briefing" --mode reveal --assets mixed --output deck
+scripts/presentation-skill "Technical briefing" --mode html --assets mixed --output deck
 ```
 
-`--mode html` remains a compatibility alias for `reveal`.
+`--mode reveal` remains a compatibility alias for `html`.
 
 ## Local Development
 

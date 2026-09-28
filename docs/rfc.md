@@ -14,7 +14,7 @@ The new public skill keeps the reusable workflow contract and drops large or leg
 
 Create `presentation_skill` as a pure public skill repo with one root skill, offline helpers, docs, tests, and starter templates. Image-generated decks remain the default. Reveal decks are a first-class composition mode with an independent local asset policy.
 
-Do not add a third hybrid mode. Rendering and assets answer different questions: `image` versus `reveal` selects the composition owner; `none`, `generated`, `exact`, or `mixed` selects the asset policy.
+Do not add a third hybrid mode. Rendering and assets answer different questions: `image` versus `html` selects the composition owner; `none`, `generated`, `exact`, or `mixed` selects the asset policy.
 
 ## Architecture
 
@@ -34,7 +34,7 @@ presentation_skill/
 │       ├── bootstrap/          # DECK_README.md → copied as deck README.md
 │       └── examples/
 │           ├── image/          # full image-deck reference
-│           └── reveal/         # courseware canvas reference deck
+│           └── html/           # canvas reference deck
 ├── scripts/presentation-skill
 └── tests/
 ```
@@ -45,8 +45,8 @@ CLI init copies the **active mode** to the deck root and the **other mode** unde
 
 | CLI flag | Deck root | Cross-reference |
 |----------|-----------|-----------------|
-| `--mode image` | image deck (`outline_visual.md`, `generated_slides/`, image `index.html`) | `examples/reveal/` |
-| `--mode reveal` | Reveal deck (`js/deck.js`, optional modules, local assets) | `examples/image/` |
+| `--mode image` | image deck (`outline_visual.md`, `generated_slides/`, image `index.html`) | `examples/html/` |
+| `--mode html` | canvas deck (`js/deck.js`, `tools/build_index.py`, local assets) | `examples/image/` |
 
 Both modes include `README.md` (from `bootstrap/DECK_README.md`) with preview and generation steps.
 
@@ -62,7 +62,7 @@ Used by the CLI. Copies template directories, writes stub `deck_plan.md`, copies
 
 Contains:
 
-- `choose_mode()` — maps user request text to `image` vs `reveal` for `--mode auto`
+- `choose_mode()` — maps user request text to `image` vs `html` for `--mode auto`
 - `choose_asset_policy()` — selects local asset policy independently from rendering mode
 - `SlideSpec`, `validate_deck_plan()`, `build_deck_plan()` — encode the skill's deck-plan quality rules as testable Python
 

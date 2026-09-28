@@ -12,7 +12,7 @@ Abstract goals like making a deck feel "premium" and "clear" simply cannot be ve
 
 ## Prompt template
 
-> You are an art director reviewing an animated lecture deck rendered as screenshots of every click. Find what
+> You are an art director reviewing an animated presentation deck rendered as screenshots of every click. Find what
 > stops it from looking {target feel}; do not praise.
 > Read first: {rubric path}{; your previous review: path}.
 > Frames: contact sheets {paths}; full-resolution frames {pattern}. Open at least {list} at full resolution and

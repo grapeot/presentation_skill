@@ -65,29 +65,9 @@ def write_image_mode_starter(
 
     _copy_template_dir(template_root / "common", target_dir)
     _copy_template_dir(template_root / "examples" / "image", target_dir)
-    _copy_template_dir(template_root / "examples" / "reveal", target_dir / "examples" / "reveal")
+    _copy_template_dir(template_root / "examples" / "html", target_dir / "examples" / "html")
 
     _write_deck_plan(target_dir, topic, DeckMode.IMAGE, asset_policy)
-    _write_deck_readme(target_dir)
-
-    return _get_all_files(target_dir)
-
-
-def write_reveal_mode_starter(
-    target_dir: Path,
-    topic: str,
-    asset_policy: AssetPolicy = AssetPolicy.MIXED,
-) -> list[Path]:
-    template_root = _template_root()
-    target_dir.mkdir(parents=True, exist_ok=True)
-
-    # The canvas deck brings its own server-free tooling (tools/shoot.py serves itself); only requirements are shared.
-    _copy_template_dir(template_root / "examples" / "reveal", target_dir)
-    shutil.copy2(template_root / "common" / "requirements.txt", target_dir / "requirements.txt")
-    shutil.copy2(template_root / "common" / "start-server.py", target_dir / "start-server.py")
-    _copy_template_dir(template_root / "examples" / "image", target_dir / "examples" / "image")
-
-    _write_deck_plan(target_dir, topic, DeckMode.REVEAL, asset_policy)
     _write_deck_readme(target_dir)
 
     return _get_all_files(target_dir)
@@ -98,5 +78,25 @@ def write_html_mode_starter(
     topic: str,
     asset_policy: AssetPolicy = AssetPolicy.MIXED,
 ) -> list[Path]:
-    """Compatibility wrapper for the former HTML mode name."""
-    return write_reveal_mode_starter(target_dir, topic, asset_policy)
+    template_root = _template_root()
+    target_dir.mkdir(parents=True, exist_ok=True)
+
+    # The canvas deck brings its own server-free tooling (tools/shoot.py serves itself); only requirements are shared.
+    _copy_template_dir(template_root / "examples" / "html", target_dir)
+    shutil.copy2(template_root / "common" / "requirements.txt", target_dir / "requirements.txt")
+    shutil.copy2(template_root / "common" / "start-server.py", target_dir / "start-server.py")
+    _copy_template_dir(template_root / "examples" / "image", target_dir / "examples" / "image")
+
+    _write_deck_plan(target_dir, topic, DeckMode.HTML, asset_policy)
+    _write_deck_readme(target_dir)
+
+    return _get_all_files(target_dir)
+
+
+def write_reveal_mode_starter(
+    target_dir: Path,
+    topic: str,
+    asset_policy: AssetPolicy = AssetPolicy.MIXED,
+) -> list[Path]:
+    """Compatibility wrapper for the former "reveal" mode name."""
+    return write_html_mode_starter(target_dir, topic, asset_policy)

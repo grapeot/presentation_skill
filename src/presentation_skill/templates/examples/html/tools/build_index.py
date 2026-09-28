@@ -41,7 +41,7 @@ F = []
 
 F.append(f'''<div class="frame" id="title">
   {plate("imgs/cpu-blueprint.svg", 1100, 300, 560, 460, "title.0")}
-  <div class="kicker rise" data-in="title.0" style="position:absolute; left:160px; top:300px">Presentation skill · Canvas mode</div>
+  <div class="kicker rise" data-in="title.0" style="position:absolute; left:160px; top:300px">Presentation skill · HTML canvas</div>
   <div class="display h1 type" data-in="title.0" style="position:absolute; left:160px; top:350px; width:860px">Reference Canvas Deck</div>
   <div class="lede rise" data-in="title.0" style="position:absolute; left:160px; top:600px; width:820px; transition-delay:.9s" data-slot="title.subtitle"></div>
 </div>''')

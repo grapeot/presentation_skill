@@ -1,4 +1,4 @@
-"""Offline checks on the canvas (Reveal mode) template: the builder regenerates frames, every data-in/slot
+"""Offline checks on the canvas (HTML mode) template: the builder regenerates frames, every data-in/slot
 references a slide in the table, and copy conversion round-trips."""
 import re
 import shutil
@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-TEMPLATE = ROOT / "src" / "presentation_skill" / "templates" / "examples" / "reveal"
+TEMPLATE = ROOT / "src" / "presentation_skill" / "templates" / "examples" / "html"
 
 
 def _copy(tmp_path: Path) -> Path:

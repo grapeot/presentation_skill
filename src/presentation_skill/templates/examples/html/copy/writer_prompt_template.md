@@ -1,4 +1,4 @@
-# Task: write the on-screen copy and the speaker notes for a lecture deck
+# Task: write the on-screen copy and the speaker notes for a presentation deck
 
 Read these files completely before writing (absolute paths):
 - deck_brief.md (slides by id, copy slots, word limits, minutes)

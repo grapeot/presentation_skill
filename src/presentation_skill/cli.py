@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 
 from .deck_plan import AssetPolicy, DeckMode, choose_asset_policy, choose_mode
-from .starter import write_image_mode_starter, write_reveal_mode_starter
+from .starter import write_html_mode_starter, write_image_mode_starter
 
 _SUBCOMMANDS = {"init", "export-pdf", "prepare-asset"}
 
@@ -20,7 +20,7 @@ def build_parser() -> argparse.ArgumentParser:
     init = sub.add_parser("init", help="Create starter artifacts for a new deck")
     init.add_argument("topic", help="Presentation topic")
     init.add_argument("--request", default="", help="Original user request used to choose default mode")
-    init.add_argument("--mode", choices=["auto", "image", "reveal", "html"], default="auto")
+    init.add_argument("--mode", choices=["auto", "image", "html", "reveal"], default="auto")
     init.add_argument(
         "--assets",
         choices=["auto", "none", "generated", "exact", "mixed"],
@@ -62,13 +62,13 @@ def _run_init(args: argparse.Namespace) -> int:
     if args.mode == "auto":
         mode = choose_mode(request)
     else:
-        mode = DeckMode.REVEAL if args.mode == "html" else DeckMode(args.mode)
+        mode = DeckMode.HTML if args.mode == "reveal" else DeckMode(args.mode)
     policy = choose_asset_policy(request, mode) if args.assets == "auto" else AssetPolicy(args.assets)
     target = Path(args.output)
     if mode == DeckMode.IMAGE:
         written = write_image_mode_starter(target, args.topic, policy)
     else:
-        written = write_reveal_mode_starter(target, args.topic, policy)
+        written = write_html_mode_starter(target, args.topic, policy)
     for path in written:
         print(path)
     return 0

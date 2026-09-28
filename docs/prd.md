@@ -2,7 +2,7 @@
 
 ## Goal
 
-Ship a public AI-agent skill for creating presentation slide decks. Default mode renders each slide as a cohesive full-slide image; Reveal mode builds exact, editable DOM-composed decks and may use generated local assets without surrendering full-slide composition to an image model.
+Ship a public AI-agent skill for creating presentation slide decks. Default mode renders each slide as a cohesive full-slide image; HTML mode builds exact, editable canvas decks in HTML, CSS and SVG and may use generated local assets without surrendering full-slide composition to an image model.
 
 ## Users
 
@@ -25,8 +25,8 @@ Agents lack a single, opinionated contract for presentation decks. Legacy repos 
 ### Modes
 
 - **Image mode (default)**: agent edits `outline_visual.md` + `visual_guideline.md`, renders via workspace image tooling, previews through Reveal.js `index.html` with `data-background` images.
-- **Reveal mode**: agent keeps exact copy and layout in the DOM, uses a registry for static slides, and adds lifecycle modules only for interactive slides.
-- **Asset policy**: independent `none`, `generated`, `exact`, or `mixed` policy controls local assets. "No image generation" maps to `reveal` + `none`; editable HTML does not itself prohibit generated icons.
+- **HTML mode**: agent keeps exact copy and layout in the DOM and SVG on one animated canvas; live content registers lifecycle hooks.
+- **Asset policy**: independent `none`, `generated`, `exact`, or `mixed` policy controls local assets. "No image generation" maps to `html` + `none`; editable HTML does not itself prohibit generated icons.
 
 ### CLI scaffold
 

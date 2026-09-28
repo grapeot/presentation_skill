@@ -1,6 +1,6 @@
 # Copy Workflow: Writer Drafts, Builder Checks
 
-Before you begin drafting any on-screen copy or writing speaker notes for a Reveal (canvas) deck, take a few minutes to read through this workflow guide.
+Before you begin drafting any on-screen copy or writing speaker notes for an HTML (canvas) deck, take a few minutes to read through this workflow guide.
 
 ## Division of labour
 
@@ -33,7 +33,7 @@ Once you have the draft, read through every single slot and every paragraph agai
 - **Illustration turned into testimony.** This occurs when a hypothetical scenario ("for example, someone might…") gets rewritten as personal testimony ("I once watched…"). You will also see invented details added to a real story, such as a fabricated message count, a season, or a job title.
 - **Causal claims added to data.** A chart that simply displayed what changed suddenly acquires an invented story explaining why it changed.
 - **Qualifier loss or inflation.** Careful nuance gets lost: a cautious phrase like "may get faster" turns into "gets faster", or a measured caveat like "once the field settles" gets inflated into "after decades".
-- **Wrong small facts.** Minor factual details get scrambled, such as the time of day, what a course reading actually says, how an assessment actually works, or what actually happened in a cited example.
+- **Wrong small facts.** Minor factual details get scrambled, such as the time of day, what a cited document actually says, how a process actually works, or what actually happened in a cited example.
 - **Audience misfit.** The copy introduces references that your specific audience does not share, like bringing up a school, app, or company from a completely different context.
 - **Idioms and hype.** Unwanted buzzwords, clichés, and hype sneak into the text despite what the voice contract specified.
 

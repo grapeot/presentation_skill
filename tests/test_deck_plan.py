@@ -11,24 +11,24 @@ from presentation_skill import (
     choose_mode,
     validate_deck_plan,
 )
-from presentation_skill.starter import write_image_mode_starter, write_reveal_mode_starter
+from presentation_skill.starter import write_html_mode_starter, write_image_mode_starter, write_reveal_mode_starter
 
 
 def test_choose_mode_defaults_to_image():
     assert choose_mode("Create a product strategy deck") == DeckMode.IMAGE
 
 
-def test_choose_mode_reveal_when_explicit():
-    assert choose_mode("Create an HTML only interactive deck without image generation") == DeckMode.REVEAL
+def test_choose_mode_html_when_explicit():
+    assert choose_mode("Create an HTML only interactive deck without image generation") == DeckMode.HTML
 
 
 @pytest.mark.parametrize(
     ("user_request", "mode", "expected"),
     [
-        ("HTML only, no image generation", DeckMode.REVEAL, AssetPolicy.NONE),
-        ("Editable HTML with generated icons", DeckMode.REVEAL, AssetPolicy.GENERATED),
-        ("Interactive deck with real screenshots", DeckMode.REVEAL, AssetPolicy.EXACT),
-        ("Reveal deck with generated icons and screenshots", DeckMode.REVEAL, AssetPolicy.MIXED),
+        ("HTML only, no image generation", DeckMode.HTML, AssetPolicy.NONE),
+        ("Editable HTML with generated icons", DeckMode.HTML, AssetPolicy.GENERATED),
+        ("Interactive deck with real screenshots", DeckMode.HTML, AssetPolicy.EXACT),
+        ("Canvas deck with generated icons and screenshots", DeckMode.HTML, AssetPolicy.MIXED),
         ("Cinematic visual keynote", DeckMode.IMAGE, AssetPolicy.GENERATED),
     ],
 )
@@ -87,14 +87,14 @@ def test_write_image_mode_starter(tmp_path: Path):
     assert "slideModule.js" in names
     assert "generate_slides.py" in names
     assert (deck / "deck_plan.md").read_text(encoding="utf-8").startswith("# Presentation Deck Plan")
-    assert (deck / "examples" / "reveal" / "index.html").exists()
-    assert (deck / "examples" / "reveal" / "js" / "engine.js").exists()
+    assert (deck / "examples" / "html" / "index.html").exists()
+    assert (deck / "examples" / "html" / "js" / "engine.js").exists()
     assert "Mode: image" in (deck / "deck_plan.md").read_text(encoding="utf-8")
 
 
-def test_write_reveal_mode_starter(tmp_path: Path):
+def test_write_html_mode_starter(tmp_path: Path):
     deck = tmp_path / "deck"
-    written = write_reveal_mode_starter(deck, "Interactive demo")
+    written = write_html_mode_starter(deck, "Interactive demo")
     names = {path.name for path in written}
     assert "deck_plan.md" in names
     assert "README.md" in names
@@ -114,5 +114,12 @@ def test_write_reveal_mode_starter(tmp_path: Path):
     assert (deck / "examples" / "image" / "index.html").exists()
     assert (deck / "examples" / "image" / "generated_slides" / "slide_01_0.jpg").exists()
     plan = (deck / "deck_plan.md").read_text(encoding="utf-8")
-    assert "Mode: reveal" in plan
+    assert "Mode: html" in plan
     assert "Asset policy: mixed" in plan
+
+
+def test_reveal_names_remain_compatibility_aliases(tmp_path: Path):
+    written = write_reveal_mode_starter(tmp_path / "deck", "Legacy caller")
+    assert any(path.name == "engine.js" for path in written)
+    assert "Mode: html" in (tmp_path / "deck" / "deck_plan.md").read_text(encoding="utf-8")
+    assert choose_mode("Build a reveal deck") == DeckMode.HTML
