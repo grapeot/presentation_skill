@@ -94,22 +94,29 @@ deck_work/
   tools/
   start-server.py
   css/  js/
-  examples/html/         # Reveal reference; legacy physical directory name
+  examples/reveal/       # canvas-mode reference deck
 ```
 
-**Reveal mode (`--mode reveal`; `html` remains a compatibility alias):**
+**Reveal mode (`--mode reveal`; `html` remains a compatibility alias) — courseware canvas:**
 
 ```
 deck_work/
   README.md
   deck_plan.md
-  index.html             # Reveal.js + ES module loader
-  js/deck.js            # static slide registry
-  js/slides/            # interactive modules only
-  imgs/
+  index.html             # stage, world and chrome; frames generated between FRAMES:BEGIN/END
+  js/deck.js             # slide table: id, part, steps, camera
+  js/engine.js           # Reveal sections + notes, frame layout, camera, state per (slide, step)
+  js/copy.js             # generated from copy/copy.md
+  css/deck.css           # tokens, motion and component vocabulary
+  copy/                  # writer packet templates + copy.md
+  tools/build_index.py   # the frames (edit here, then run)
+  tools/copy_to_js.py    # copy.md -> js/copy.js
+  tools/shoot.py         # screenshot every step, contact sheets, offline/error report
+  tools/vendor.mjs       # npm run vendor: Reveal + fonts into vendor/
+  package.json
+  imgs/                  # plates (ink on transparent) and exact assets
   visual_guideline.md
-  start-server.py
-  css/  js/
+  start-server.py  requirements.txt
   examples/image/        # full image-deck reference
 ```
 

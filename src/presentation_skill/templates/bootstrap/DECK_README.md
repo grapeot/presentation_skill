@@ -24,17 +24,18 @@ Open `http://localhost:8765`. Use a port other than 8000 if that port is occupie
 4. Images land in `generated_slides/`; `index.html` references them via Reveal.js `data-background`.
 5. Add speaker notes in `<aside class="notes">` inside each `<section>` in `index.html`.
 
-See `examples/image/` for a complete reference deck (same layout as the root when mode is image).
+See `examples/image/` for a complete reference deck (same layout as the root when mode is image). The canvas reference deck is under `examples/reveal/`.
 
-## Reveal mode workflow
+## Reveal mode workflow (courseware canvas)
 
-1. Keep static slide markup in `js/deck.js` and exact copy/layout in the DOM.
-2. Use `js/slides/` modules only for slides with listeners, timers, charts, or WebGL; each exports `initialize` and `cleanup`.
-3. Put exact and generated local assets under `imgs/`; align peer visuals through a shared `.card-visual` container.
-4. Use `presentation-skill prepare-asset` to normalize generated line art when transparent PNG output is needed.
-5. Preview with `start-server.py` as above.
+1. `npm install && npm run vendor` once, so Reveal and the fonts are local and the deck runs offline.
+2. Plan the sheet in `deck_plan.md` and `visual_guideline.md`: one claim per slide, what moves on each click.
+3. Edit the slide table in `js/deck.js` and the frames in `tools/build_index.py`, then run `python3 tools/build_index.py`.
+4. Write the copy through the writer packet in `copy/` (templates included), then run `python3 tools/copy_to_js.py`.
+5. Verify with `python3 tools/shoot.py --out verification/round1` and run a critic round on the contact sheets.
+6. Preview with `start-server.py`; press S for the speaker view.
 
-See `examples/html/` for the Reveal reference deck. The directory keeps its legacy physical name for compatibility.
+See `examples/reveal/` for the reference canvas deck and the skill's `reveal_decks.md` for the full contract.
 
 ## Before changing slides
 

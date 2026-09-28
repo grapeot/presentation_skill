@@ -28,7 +28,7 @@ Covers `deck_plan.py`:
 Covers end-to-end CLI via `scripts/presentation-skill`:
 
 - `--help` renders
-- `--mode image` creates root image deck + `examples/html/` + `README.md`
+- `--mode image` creates root image deck + `examples/reveal/` + `README.md`
 - `--mode reveal` creates a registry-based Reveal deck + generated-icon fixture + `examples/image/`
 - `--mode html` remains a Reveal compatibility alias
 
