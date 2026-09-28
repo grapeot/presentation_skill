@@ -1,65 +1,44 @@
 # Copy Workflow: Writer Drafts, Builder Checks
 
-Read this before writing on-screen copy or speaker notes for a Reveal (canvas) deck.
+Before you begin drafting any on-screen copy or writing speaker notes for a Reveal (canvas) deck, take a few minutes to read through this workflow guide.
 
 ## Division of labour
 
 | Role | Who | Owns |
 |---|---|---|
-| Editor and builder | the main agent | thesis, slide list, visual system, motion, code, fact checks, final acceptance |
-| Writer | a separate writing model in a fresh session; the reference setup uses Antigravity CLI (`agy --print`, `gemini-3.8-flash-high`) | all on-screen copy and the spoken script |
-| Critic | a fresh sub-agent that sees only screenshots and a rubric | ranked visual problems ([critic_review.md](critic_review.md)) |
+| Editor and builder | This is the main agent | The core thesis, slide list, visual system, motion design, code, fact checking, and final acceptance |
+| Writer | A dedicated writing model running in a clean session; our reference setup uses Antigravity CLI (`agy --print`, `gemini-3.8-flash-high`) | Drafting all the on-screen copy as well as the spoken script |
+| Critic | A fresh sub-agent provided strictly with screenshots and an evaluation rubric | Finding and ranking visual issues ([critic_review.md](critic_review.md)) |
 
-A strong coding agent is better at motion, layout and following constraints; a strong writing model is better at
-prose. Give the prose to the writer. **If no separate writer is available, the builder writes the copy itself**
-against the same contracts and keeps the same drift checks. Record which path was used in `validation.md`.
+In practice, a capable coding agent is much better at motion, layout, and following constraints, whereas a dedicated writing model produces far more natural prose. That's why you want to hand off the prose to the writer whenever possible. **If no separate writer is available, the builder writes the copy itself** against the same contracts and keeps the same drift checks in place. Whichever path you take, be sure to record it in `validation.md`.
 
 ## The writer's packet
 
-Put these in a minimal scratch directory and pass absolute paths. Templates are in the scaffold under `copy/`.
+To set up the writer properly, place the following files into a minimal scratch directory and pass them around using absolute paths. If you need starter templates, you can find them in the scaffold right under `copy/`.
 
-- `source_contract.md`: every fact, number, date and quote the copy may use, each with its source and its
-  qualifiers; the speaker's positions with their exact boundaries; stories marked as witnessed or illustrative.
-- `deck_brief.md`: audience, opening question, thesis, closing line; per slide the id, minutes, what the picture
-  does, and the copy slots with word limits. FIXED slots carry exact text.
-- `voice_contract.md`: the spoken register and the on-screen register.
-- `writer_prompt.md`: the task. The output is one `copy.md` with a fixed per-slide schema so `tools/copy_to_js.py`
-  can parse it.
+- `source_contract.md`: This file lays out every fact, number, date, and quote that the copy is allowed to use, along with its specific source and qualifiers. It also spells out the speaker's positions with their exact boundaries, and explicitly marks whether stories were firsthand witnessed experiences or illustrative hypotheticals.
+- `deck_brief.md`: Here you define the target audience, the opening question, the overarching thesis, and the closing line. For each individual slide, specify its id, allocated minutes, what the visual accomplishes, and the specific copy slots along with their word limits. Note that any FIXED slots carry exact text that cannot be changed.
+- `voice_contract.md`: This sets the tone for both the spoken register and the on-screen register.
+- `writer_prompt.md`: This defines the actual task. It instructs the writer to produce a single `copy.md` file that adheres to a fixed per-slide schema so `tools/copy_to_js.py` can parse it cleanly.
 
-Run the writer in a fresh session (for Antigravity: `--new-project`, an explicit `--print-timeout`, the process's
-working directory in the scratch dir). Then verify the file actually landed where it should and has every slide
-section. A non-zero or "error" status can come from the writer's closing summary overflowing its output limit
-while the file itself is complete; check the file, not only the status.
+When you run the writer, always do so in a fresh session. If you are using Antigravity, pass `--new-project`, provide an explicit `--print-timeout`, and set the process's working directory right in the scratch dir. Once the run finishes, take a moment to verify that the file actually landed where it should and that it contains every single slide section. Keep in mind that seeing a non-zero exit code or an "error" status can happen simply because the writer's closing summary overflowed its output limit while the file itself is entirely complete, so always check the file itself, not only the status.
 
-Word budget: about 130 spoken words per minute. `tools/copy_to_js.py` prints the total and the estimated duration.
+As for your word budget, plan for about 130 spoken words per minute. When you run `tools/copy_to_js.py`, it will print out the total word count alongside an estimated speaking duration.
 
 ## The builder's drift check
 
-Read every slot and every paragraph against the source contract. The writer is fluent but does not follow
-instructions reliably. These are the drifts that actually occurred, in order of how often:
+Once you have the draft, read through every single slot and every paragraph against your source contract. The writer model produces very fluent text, but it does not follow instructions reliably. In practice, here are the exact kinds of drift that actually occurred on past runs, ordered from most frequent to least frequent:
 
-- **Semantic slot drift.** A slot filled with the opposite of what it must carry. For example, a "problem that
-  persists" slot filled with the patch that expires ("fitting facts into a limited window", "standardising the
-  interface").
-- **Illustration turned into testimony.** A hypothetical ("for example, someone might…") rewritten as "I once
-  watched…". Invented details added to a real story (a message count, a season, a job title).
-- **Causal claims added to data.** A chart of what changed gained a story of why it changed.
-- **Qualifier loss or inflation.** "May get faster" became "gets faster"; "once the field settles" became "after
-  decades".
-- **Wrong small facts.** Time of day, what a course reading actually says, how an assessment actually works, what
-  happened in a cited example.
-- **Audience misfit.** References the audience does not share: a school, app or company from another context.
-- **Idioms and hype** despite the voice contract.
+- **Semantic slot drift.** This happens when a slot gets filled with the exact opposite of what it must carry. For example, a slot reserved for a "problem that persists" might end up filled with a temporary patch that expires, like "fitting facts into a limited window" or "standardising the interface".
+- **Illustration turned into testimony.** This occurs when a hypothetical scenario ("for example, someone might…") gets rewritten as personal testimony ("I once watched…"). You will also see invented details added to a real story, such as a fabricated message count, a season, or a job title.
+- **Causal claims added to data.** A chart that simply displayed what changed suddenly acquires an invented story explaining why it changed.
+- **Qualifier loss or inflation.** Careful nuance gets lost: a cautious phrase like "may get faster" turns into "gets faster", or a measured caveat like "once the field settles" gets inflated into "after decades".
+- **Wrong small facts.** Minor factual details get scrambled, such as the time of day, what a course reading actually says, how an assessment actually works, or what actually happened in a cited example.
+- **Audience misfit.** The copy introduces references that your specific audience does not share, like bringing up a school, app, or company from a completely different context.
+- **Idioms and hype.** Unwanted buzzwords, clichés, and hype sneak into the text despite what the voice contract specified.
 
-Fix each drift surgically: restore the contract's wording and leave the voice alone. When a whole passage needs
-new reasoning (for example, resolving an apparent contradiction the owner raised), send a small targeted packet
-back to the writer rather than rewriting it yourself. Every fix goes into `validation.md`, as does every
-builder-authored on-screen string (structural labels, a claim added after a critic round).
+When you find these drifts, fix each one surgically: restore the contract's wording and leave the voice alone. When an entire passage requires new reasoning—for instance, when resolving an apparent contradiction raised by the deck owner—send a small, targeted packet back to the writer rather than trying to rewrite the passage yourself. Every fix must be recorded in `validation.md`, and that includes every builder-authored on-screen string, such as structural labels or any new claim added after a critic round.
 
 ## Audit every choice against the audience
 
-Before building, and again whenever the owner asks "why is this here?", check each example, name and reference
-against one question: does this make these specific listeners understand faster or believe more? A reference
-that survives only because it was in the source material ("we used it in the last talk") gets replaced with one
-the audience already lives with. Verify replacements from primary sources: a localized example that is
-technically wrong, such as a payment flow that does not actually retry on the client, is worse than the original.
+Before you begin building, and again whenever the owner pauses to ask "why is this here?", take a moment to check each example, name, and reference against a single question: does this make these specific listeners understand faster or believe more? If a reference survives only because it happened to be in the original source material ("we used it in the last talk"), that reference must be replaced with one the audience already lives with. Verify your replacements from primary sources: introducing a localized example that is technically wrong, such as describing a payment flow that does not actually retry on the client, is far worse than leaving the original in place.
