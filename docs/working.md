@@ -112,3 +112,36 @@
 - `examples/reveal/` → `examples/html/`; `skills/reveal_decks.md` → `skills/html_decks.md`.
 - Dropped "courseware" framing: the canvas is a borderless animated sheet for keynotes, lectures, pitches, walkthroughs and explainers. Template chrome reads "Event · Talk title".
 - Added an SVG section to `html_decks.md`: structure (diagrams, charts, connectors) is hand-written inline SVG in the deck's register; plates carry material.
+
+## 2026-09-28 — PDF export for HTML (canvas) decks
+
+- `export-pdf` now exports HTML (canvas) decks through headless Chromium (`src/presentation_skill/export_html_pdf.py`). It picks this path when the deck has `js/engine.js` and `window.DECK`; `--mode image|html` overrides. The image-deck path is unchanged.
+- One page per slide at its print state: the last step by default, or `print: <step>` on the slide entry. The template's `S()` helper takes an optional fifth `opts` argument for it. During export `<html>` carries `pdf-export` and `data-print-slide` / `data-print-step`, so a deck can write a dedicated handout layout in CSS.
+- Rendering: private loopback server on a free port, 1920×1080 viewport, screen media, transitions and CSS animations off, `deckGoto(i, step)`, wait until the DOM stops changing, then `page.pdf` at 1920×1080 with backgrounds and `page_ranges="1"`. Pages are merged with pypdf. A content-hash dedupe then stores repeated images once (Chromium emits a separate copy per page).
+- `--with-notes` adds a full notes page after each slide (from `COPY[id].notes`, else the Reveal notes aside), in the deck's body font and paper colour, two columns, auto-sized 30→16 px.
+- The export fails loudly on page-count mismatch, console or page errors, failed local requests, any non-loopback request (aborted and reported), `.missing` slots, fonts with status `error`, bad `print` values, or pages that are not one 1440×810 pt page. It writes `<name>_contact_NN.jpg` next to the PDF (pymupdf or pdftoppm).
+- New optional extra `[pdf-html]` (playwright, pypdf, Pillow). A missing Playwright or Chromium gives an install hint and exit code 3.
+- Tests: `tests/test_export_html_pdf.py`. The unit tests need no browser. The browser tests export the template deck with a stub Reveal, and skip when Playwright/Chromium is missing. `.venv/bin/python -m pytest -q`: 86 passed locally with Chromium; with Playwright hidden, the 5 browser tests skip.
+- Real-world check on a 40-slide production canvas deck (its own engine copy and CSS, vendored Reveal and fonts): 40 pages (80 with notes), no warnings, about 17 s / 20 s. Every PDF page matched a screenshot of the same state taken after its transitions settled naturally (at most 0.3% of pixels differ, all antialiasing). The fonts are the deck's own (the variable fonts embed as Type 3 outlines, and text stays extractable). About 18 MB, almost all of it the deck's engraving plates.
+
+Known limitations:
+
+- A slide printed at `print: <step>` shows exactly that state; there is no automatic "union of all states" layout. Slides that hide information in every state need a handout rule in CSS.
+- An infinite CSS idle animation prints at its first frame. JavaScript-driven motion that never settles is printed after 4 s, with a warning.
+- Letters split into per-character spans (the `.type` effect) extract without word spaces in some PDF readers (pypdf); pymupdf reads the spaces correctly.
+- Glyphs missing from a subsetted web font fall back to a system font, exactly as on screen (seen for "→" in a Latin-only mono subset).
+
+### 2026-09-28 (later): Preview fidelity and image size
+
+- Owner review of the 43-slide handout found two problems. The falling-away half of each split card showed a grey box in Preview. Images sometimes did not display fully.
+- Cause of the grey box, reproduced by rendering the PDF with PDFKit (the engine behind Preview): Chromium prints a blurred `box-shadow` as a fill under a luminosity soft mask with a JPEG mask image. PDFKit ignores that mask and fills the whole shadow rectangle grey. pymupdf and Chromium honour the mask, which is why the earlier contact sheets looked right. Also found: repeating gradients and SVG `<pattern>` fills are printed as one low-resolution raster tile, which shows as moiré in PDFKit.
+- Fix, in the exporter and generic for any canvas deck: before each page is printed, the browser redraws these effects itself.
+  - Blurred outer shadows are redrawn into a 2× PNG on a free pseudo-element behind the element.
+  - Repeating and conic gradient backgrounds are redrawn into a 2× PNG background.
+  - SVG pattern fills are tiled out into clipped vector geometry.
+  - CSS masks that are fully opaque over their element are dropped.
+
+  All changes are undone before the next state.
+- Images: `<img>` sources are capped at 2× their displayed size (`--image-scale`), and large RGB Flate images are re-encoded as JPEG q85 after merging (`--image-quality`); soft masks stay lossless. The settle step now also waits for `img.decode()` and reports animations still running at capture.
+- Local server backlog raised to 128. The default of 5 dropped a connection under a burst of font and plate requests (`net::ERR_SOCKET_NOT_CONNECTED`, then `DECK` undefined).
+- Verification on the real deck (43 slides, deck not committed): every page was rendered with PDFKit and diffed against a live screenshot of the same settled state. Before the fix, the split-card pages differed on 5.7% of pixels (the grey boxes) and the bar-chart page on 1.8% (moiré). After the fix, the maximum is 0.27%, all anti-aliasing and PDFKit's slightly heavier rendering of the embedded mono font. Size: 53 MB as printed, 19 MB with dedupe only, 11.4 MB now (13.3 MB with notes).
