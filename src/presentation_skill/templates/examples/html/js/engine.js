@@ -10,6 +10,7 @@
      data-count="slide.step" data-from data-to     number rolls to its value when stepping forward
      data-bar / data-follow / data-yearlabel       SVG bar height, label y, label text per state
      data-slot="slide.slot"                        filled from window.COPY (the writer's copy)
+     data-no-nav                                   touches inside never navigate (a, button and form fields are skipped already)
    Optional per-slide hooks for live content (charts, WebGL, video):
      window.DECK_HOOKS = { slideId: { enter(step) {}, leave() {} } } */
 (function () {
@@ -182,11 +183,34 @@
 
   Reveal.initialize({
     width: W, height: H, hash: true, controls: false, progress: false, center: false,
-    transition: "none", backgroundTransition: "none", overview: false, help: false,
+    transition: "none", backgroundTransition: "none", overview: false, help: false, touch: false,
+    scrollActivationWidth: null, /* Reveal 5 switches narrow (portrait phone) viewports to scroll view; keep the canvas */
     plugins: [RevealNotes],
   });
   Reveal.on("ready", () => { update(false); document.body.classList.add("ready"); });
   ["slidechanged", "fragmentshown", "fragmenthidden"].forEach(ev => Reveal.on(ev, () => update(true)));
+
+  /* ---------- touch: tap the left 30% to go back, elsewhere to advance; swipe left/right.
+     Touch only (mouse, keyboard and clickers are untouched). Skips pinches, zoomed-in viewports (panning),
+     and anything interactive: a, button, form fields, or an element marked data-no-nav. ---------- */
+  /* touch events, not pointer events: the browser may claim a horizontal drag as a pan and cancel the pointer */
+  let gesture = null;
+  addEventListener("touchstart", e => {
+    if (e.touches.length !== 1) { gesture = null; return; }
+    const t = e.touches[0];
+    const zoomed = window.visualViewport && visualViewport.scale > 1.05;
+    const skip = e.target.closest && e.target.closest("a, button, input, textarea, select, [data-no-nav]");
+    gesture = zoomed || skip ? null : { x: t.clientX, y: t.clientY, time: performance.now() };
+  }, { passive: true });
+  addEventListener("touchmove", e => { if (e.touches.length > 1) gesture = null; }, { passive: true });
+  addEventListener("touchcancel", () => { gesture = null; }, { passive: true });
+  addEventListener("touchend", e => {
+    const g = gesture; gesture = null;
+    if (!g || e.touches.length) return;
+    const t = e.changedTouches[0], dx = t.clientX - g.x, dy = t.clientY - g.y, dt = performance.now() - g.time;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy) && dt < 800) { dx < 0 ? Reveal.next() : Reveal.prev(); return; }
+    if (Math.hypot(dx, dy) < 12 && dt < 400) { g.x < innerWidth * 0.3 ? Reveal.prev() : Reveal.next(); }
+  }, { passive: true });
 
   /* test hook for the screenshot harness */
   window.deckGoto = (i, step) => { Reveal.slide(i, 0, step - 1); update(false); };

@@ -115,3 +115,13 @@ The browser tests copy the template deck to a temporary directory, replace the n
 - export with notes: blurred shadows, repeating gradients and both SVG hatch patterns are redrawn and no luminosity soft mask is left in the file; 10 pages at 1440×810 pt, slide pages carry only their own frame's text, notes pages carry only notes, a `print: 0` override prints the first state, the default prints the last state, counters show their final values, a `html.pdf-export[data-print-slide=…]` handout rule applies only on its own page, and a DOM link survives as a `/URI` annotation
 - failures: an unfilled slot, an external request plus a console error, and an out-of-range `print` value all raise `HtmlExportError`
 - CLI end-to-end export to a custom `--output`
+
+
+### `tests/test_canvas_template.py`
+
+Covers the HTML (canvas) template offline:
+
+- `tools/build_index.py` regenerates the frames block, every `data-in` / `data-state` / slot reference names a slide in the table, and `tools/copy_to_js.py` round-trips the copy
+- the engine keeps the canvas on portrait phones (`scrollActivationWidth: null`) and handles touch (`touchend`, `[data-no-nav]`), and the CSS sets `touch-action: manipulation`
+
+One browser test reuses the stub Reveal and the skip rule from `tests/test_export_html_pdf.py`. At 390×844 with touch and mobile emulation it checks that `#/2` lands on slide index 2, a right tap advances, a left tap goes back, CDP swipes go both ways, and neither a two-finger pinch nor a mouse click navigates. The stub cannot reproduce Reveal's scroll view; check that against a vendored deck when the engine's Reveal options change.
