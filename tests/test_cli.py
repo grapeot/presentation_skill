@@ -37,7 +37,7 @@ def test_script_creates_image_starter(tmp_path: Path):
     assert (out / "deck_plan.md").exists()
     assert (out / "visual_guideline.md").exists()
     assert (out / "README.md").exists()
-    assert (out / "examples" / "html" / "index.html").exists()
+    assert (out / "examples" / "reveal" / "index.html").exists()
 
 
 def test_script_creates_reveal_starter(tmp_path: Path):
@@ -61,8 +61,10 @@ def test_script_creates_reveal_starter(tmp_path: Path):
     assert (out / "deck_plan.md").exists()
     assert (out / "index.html").exists()
     assert (out / "js" / "deck.js").exists()
-    assert (out / "js" / "slides" / "interactive-check.js").exists()
-    assert (out / "imgs" / "cpu-blueprint.svg").exists()
+    assert (out / "js" / "engine.js").exists()
+    assert (out / "tools" / "build_index.py").exists()
+    assert (out / "tools" / "shoot.py").exists()
+    assert (out / "copy" / "writer_prompt_template.md").exists()
     assert (out / "README.md").exists()
     assert (out / "examples" / "image" / "index.html").exists()
     assert (out / "examples" / "image" / "generated_slides" / "slide_01_0.jpg").exists()

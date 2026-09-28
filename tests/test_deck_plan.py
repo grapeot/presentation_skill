@@ -87,7 +87,8 @@ def test_write_image_mode_starter(tmp_path: Path):
     assert "slideModule.js" in names
     assert "generate_slides.py" in names
     assert (deck / "deck_plan.md").read_text(encoding="utf-8").startswith("# Presentation Deck Plan")
-    assert (deck / "examples" / "html" / "index.html").exists()
+    assert (deck / "examples" / "reveal" / "index.html").exists()
+    assert (deck / "examples" / "reveal" / "js" / "engine.js").exists()
     assert "Mode: image" in (deck / "deck_plan.md").read_text(encoding="utf-8")
 
 
@@ -97,13 +98,19 @@ def test_write_reveal_mode_starter(tmp_path: Path):
     names = {path.name for path in written}
     assert "deck_plan.md" in names
     assert "README.md" in names
-    assert "index.html" in names
-    assert "custom.css" in names
-    assert "slideModule.js" in names
-    assert "deck.js" in names
-    assert "interactive-check.js" in names
-    assert "cpu-blueprint.svg" in names
-    assert "visual_guideline.md" in names
+    for required in [
+        "index.html", "engine.js", "deck.js", "copy.js", "deck.css",
+        "build_index.py", "copy_to_js.py", "shoot.py", "vendor.mjs", "package.json",
+        "source_contract_template.md", "brief_template.md", "voice_contract_template.md",
+        "writer_prompt_template.md", "visual_guideline.md", "cpu-blueprint.svg",
+    ]:
+        assert required in names, required
+    # the canvas deck replaces the old per-slide module scaffold
+    assert "slideModule.js" not in names
+    assert "interactive-check.js" not in names
+    index = (deck / "index.html").read_text(encoding="utf-8")
+    assert "FRAMES:BEGIN" in index and 'id="world"' in index
+    assert "cdn.jsdelivr.net" not in index  # the deck must run offline
     assert (deck / "examples" / "image" / "index.html").exists()
     assert (deck / "examples" / "image" / "generated_slides" / "slide_01_0.jpg").exists()
     plan = (deck / "deck_plan.md").read_text(encoding="utf-8")

@@ -95,3 +95,13 @@
 
 - Wire `deck_plan.py` validation into CLI (`--validate-deck-plan`) if agents frequently ship thin deck plans.
 - Add opt-in live test for `generate_slides.py` when CI secrets are available.
+
+
+## 2026-09-28 — Reveal mode becomes the courseware canvas (breaking)
+
+- Replaced the per-slide DOM-card Reveal scaffold with a canvas engine: one world sheet, frames auto-laid-out in slide order, slides addressed by id, state as a pure function of (slide, step), camera moves, motion vocabulary (pen, plate ink-in, type-on, counters, split-flap, split cards).
+- New scaffold tooling: `tools/build_index.py`, `tools/copy_to_js.py`, `tools/shoot.py` (every step, contact sheets, offline/error report), `tools/vendor.mjs`; writer packet templates under `copy/`.
+- New skill docs: `copy_workflow.md` (writer drafts, builder checks), `critic_review.md`; `reveal_decks.md` rewritten; plates section in `generated_assets.md`; model note (designed for Claude Opus 5.5).
+- `examples/html/` renamed to `examples/reveal/`; `js/slides/` modules and `slideModule.js` are gone from the reveal scaffold (live content uses `DECK_HOOKS`).
+- Lessons come from a real 40-slide, ~51-minute guest lecture built with this workflow (traps table in `reveal_decks.md`).
+- Validation: offline pytest suite; scaffolded a reveal deck from the CLI, vendored it, and ran `tools/shoot.py`.

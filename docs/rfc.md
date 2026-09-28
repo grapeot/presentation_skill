@@ -30,11 +30,11 @@ presentation_skill/
 │   ├── export_pdf.py           # image-deck → clickable PDF (compat gate + img2pdf + link annots)
 │   ├── cli.py                  # subcommands: init (legacy positional supported), export-pdf
 │   └── templates/
-│       ├── common/             # start-server.py, slideModule.js, css
+│       ├── common/             # start-server.py, requirements, image-mode css/js
 │       ├── bootstrap/          # DECK_README.md → copied as deck README.md
 │       └── examples/
 │           ├── image/          # full image-deck reference
-│           └── html/           # Reveal reference; legacy physical name retained
+│           └── reveal/         # courseware canvas reference deck
 ├── scripts/presentation-skill
 └── tests/
 ```
@@ -45,7 +45,7 @@ CLI init copies the **active mode** to the deck root and the **other mode** unde
 
 | CLI flag | Deck root | Cross-reference |
 |----------|-----------|-----------------|
-| `--mode image` | image deck (`outline_visual.md`, `generated_slides/`, image `index.html`) | `examples/html/` |
+| `--mode image` | image deck (`outline_visual.md`, `generated_slides/`, image `index.html`) | `examples/reveal/` |
 | `--mode reveal` | Reveal deck (`js/deck.js`, optional modules, local assets) | `examples/image/` |
 
 Both modes include `README.md` (from `bootstrap/DECK_README.md`) with preview and generation steps.

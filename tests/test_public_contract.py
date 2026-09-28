@@ -7,6 +7,8 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_exactly_one_root_skill():
     skills = sorted((ROOT / "skills").glob("*.md"))
     assert [skill.name for skill in skills] == [
+        "copy_workflow.md",
+        "critic_review.md",
         "generated_assets.md",
         "reference.md",
         "reveal_decks.md",

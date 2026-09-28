@@ -1,6 +1,6 @@
 # Presentation Skill
 
-Presentation Skill helps AI coding agents create slide decks. It defaults to image-generated decks, where each slide is rendered as a complete visual scene. Reveal mode keeps exact copy, layout, links, and interaction in HTML/CSS/JavaScript while optionally using generated icons and diagrams as local assets.
+Presentation Skill helps AI coding agents create slide decks. It defaults to image-generated decks, where each slide is rendered as a complete visual scene. Reveal mode builds a "courseware canvas": one animated sheet with a camera, where diagrams draw themselves, cards split and numbers roll on each click, with exact copy in the DOM, textless generated plates, and copy drafted by a writing model and fact-checked by the builder.
 
 This repo is a public, platform-agnostic skill package. It works with agents such as OpenCode, Claude Code, Cursor, Codex, or any terminal coding agent that can read Markdown instructions and write files.
 
@@ -21,7 +21,7 @@ The root skill is `skills/skill_presentation.md`.
 
 Image-generated mode is the default. The agent creates a deck plan, a visual direction, slide prompts, local artifacts, and rendered images through the workspace's configured image generation tool.
 
-Reveal mode is a first-class alternative. Use it when the deck must preserve exact copy, remain editable, or include code, real data, links, fragments, or interaction. Rendering mode and asset policy are independent: `reveal` can use no generated images, generated local assets, exact assets, or a mix.
+Reveal mode is a first-class alternative for lectures and talks that should move, and for decks that must keep exact copy, code, real data or links. See `skills/reveal_decks.md`. It was designed and validated with Claude Opus 5.5 as the builder; other models are untested (GPT-6 Astra is the suggested alternative). Rendering mode and asset policy are independent.
 
 ```bash
 scripts/presentation-skill "Visual keynote" --mode image --output deck

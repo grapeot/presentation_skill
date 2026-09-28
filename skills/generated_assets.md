@@ -43,3 +43,35 @@ Tune thresholds from the actual source. The defaults reflect a real dark-backgro
 | Cards jump because assets have different whitespace | Tight-crop, then normalize through a fixed-height `.card-visual` container. |
 | A generated diagram invents labels or numbers | Remove its text and put exact labels in the DOM, or draw the entire diagram deterministically. |
 | Assets look individually good but unrelated | Regenerate as a locked set against one visual grammar and shared reference. |
+
+## Plates for canvas decks
+
+A canvas deck gets much of its expensive feel from a set of textless illustration plates that share one style.
+On the reference deck: 19th-century steel engravings, ink on paper, one subject each, printed onto the page.
+
+**Choose the metaphor, not the topic.** Pick an object the audience recognises without a caption and that
+carries the argument: a card catalogue for retrieval (the old problem underneath), scaffolding for a temporary
+structure, a telephone switchboard for protocols, a stone tablet for knowledge baked into weights, a split geode
+for "you have to open it to see inside".
+
+**Lock the style on one plate first.** Write one style paragraph (medium, line technique, paper, "no text, no
+letters, no numbers, no border, isolated subject, wide margin") and render a single plate. Once it is right,
+render the rest in parallel with the same paragraph (4–6 at a time; each call can take minutes). Long prompts
+break `xargs -I`; use a small script with a thread pool instead.
+
+**Print, don't paste.** Convert every plate to ink on transparent. Blend modes do not reach the page through a
+transformed world layer, so an untreated plate shows up as a white rectangle.
+
+```bash
+presentation-skill prepare-asset raw/plate.png imgs/plate.png \
+  --target-color '#1b2130' --background light --low 40 --high 248 --crop tight --padding 20
+```
+
+If the paper tone varies between renders, first divide each image by the median colour of its border so the
+paper becomes exactly white. Then compress (WebP works well; keep the long side around 1000 px).
+
+**Check the set on one contact sheet** before building with it. Anything tinted, glossy, carrying text, or in a
+different technique gets regenerated from the same paragraph.
+
+**3D is optional.** A Blender render is justified only when a claim needs real light, parallax or a physical
+object turning. On the reference deck, the engraving set carried the look without it.
