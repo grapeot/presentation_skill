@@ -166,3 +166,8 @@ Known limitations:
 - Ported from a real 42-slide deck where it was built and used.
 - Tests: an offline check of the engine and CSS contract, plus a browser test on the stub Reveal (overview open, every frame in its final state, arrows, Enter, M then Esc, the keyboard restored, the corner button, hover, a typed number, hidden in PDF export). The stub now models Reveal's bubble-phase key listener and `configure({ keyboard })`.
 - Validation: 93 passed locally, three consecutive runs. The scaffold smoke (`--mode html`, vendored, `tools/shoot.py`) gave 12 shots, 0 errors, 0 failed or external requests and 0 missing slots.
+
+## 2026-09-28 — Crisp deep zooms
+
+- `#world` no longer carries a permanent `will-change: transform`. `flyTo()` sets it while the camera flies and clears it when the camera settles, so the browser re-rasters at the final zoom. A 7.4× fly-in into a miniature on the public example deck was blurry before the change and crisp after it.
+- Test: an offline check that the world rule has no `will-change` and that the engine toggles it. A Known traps row is added in `skills/html_decks.md`.
