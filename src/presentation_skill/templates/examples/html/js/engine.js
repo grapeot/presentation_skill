@@ -90,14 +90,14 @@
   let cam = null, camAnim = null;
   const setCam = c => { world.style.transform = `translate(${W / 2 - c[0] * c[2]}px, ${H / 2 - c[1] * c[2]}px) scale(${c[2]})`; cam = c.slice(); };
   const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-  function flyTo(t, animate) {
+  function flyTo(t, animate, fixedDur) {
     if (camAnim) cancelAnimationFrame(camAnim);
     if (!cam || !animate) { setCam(t); return; }
     const a = cam.slice(), dx = t[0] - a[0], dy = t[1] - a[1];
     const dist = Math.hypot(dx, dy) * Math.min(a[2], t[2]);
     if (dist < 1 && Math.abs(t[2] - a[2]) < 1e-3) { setCam(t); return; }
-    const far = dist > 2600;                           // leaving a set: lift the camera
-    const dur = Math.min(2200, 950 + dist * 0.22);
+    const far = !fixedDur && dist > 2600;              // leaving a set: lift the camera
+    const dur = fixedDur || Math.min(2200, 950 + dist * 0.22);
     const zDip = far ? Math.min(a[2], t[2]) * 0.62 : null;
     const t0 = performance.now();
     const la = Math.log(a[2]), lb = Math.log(t[2]);
@@ -126,12 +126,18 @@
 
   /* ---------- apply state for a global position ---------- */
   let prev = -1;
-  function apply(cur, animate) {
+  /* each frame's final step, for the navigator's overview (every frame shown complete) */
+  const FRAME_FINAL = {};
+  DECK.forEach((s, i) => { const f = s.frame || s.id; FRAME_FINAL[f] = Math.max(FRAME_FINAL[f] ?? -1, i * 100 + s.steps - 1); });
+  const frameCur = el => { if (el._fc === undefined) { const fr = el.closest(".frame"); el._fc = fr && fr.id in FRAME_FINAL ? FRAME_FINAL[fr.id] : null; } return el._fc; };
+  function apply(globalCur, animate, perFrame) {
+    const at = el => (perFrame && frameCur(el) != null) ? frameCur(el) : globalCur;
     document.querySelectorAll("[data-in]").forEach(el => {
-      const a = code(el.dataset.in), b = el.dataset.out ? code(el.dataset.out) : Infinity;
+      const cur = at(el), a = code(el.dataset.in), b = el.dataset.out ? code(el.dataset.out) : Infinity;
       el.classList.toggle("on", cur >= a && cur < b);
     });
     document.querySelectorAll("[data-state]").forEach(el => {
+      const cur = at(el);
       el.dataset.state.split(/\s+/).filter(Boolean).forEach(tok => {
         const [cls, rng] = tok.split("@"); const [a, b] = rng.split("-");
         const lo = code(a), hi = b ? code(b) : Infinity;
@@ -139,26 +145,26 @@
       });
     });
     document.querySelectorAll("[data-flap]").forEach(el => {
-      const [a, b] = el.dataset.flap.split(/\s+/).map(code);
+      const cur = at(el), [a, b] = el.dataset.flap.split(/\s+/).map(code);
       el.classList.toggle("come", cur < a); el.classList.toggle("cur", cur >= a && cur < b); el.classList.toggle("gone", cur >= b);
     });
     document.querySelectorAll("[data-count]").forEach(el => {
-      const c = code(el.dataset.count), from = +el.dataset.from, to = +el.dataset.to;
+      const cur = at(el), c = code(el.dataset.count), from = +el.dataset.from, to = +el.dataset.to;
       const want = cur >= c ? to : from;
-      const crossing = animate && prev < c && cur >= c && cur - prev <= 1;
+      const crossing = animate && !perFrame && prev < c && cur >= c && cur - prev <= 1;
       if (el._v !== want) { roll(el, crossing ? from : want, want, crossing); el._v = want; }
     });
     document.querySelectorAll("[data-bar]").forEach(el => {
-      const c = code(el.dataset.bar), h = cur >= c ? +el.dataset.h1 : +el.dataset.h0;
+      const cur = at(el), c = code(el.dataset.bar), h = cur >= c ? +el.dataset.h1 : +el.dataset.h0;
       el.setAttribute("height", h); el.setAttribute("y", (+el.dataset.base || 480) - h);
     });
     document.querySelectorAll("[data-follow]").forEach(el => {
-      const c = code(el.dataset.follow); el.setAttribute("y", cur >= c ? el.dataset.y1 : el.dataset.y0);
+      const cur = at(el), c = code(el.dataset.follow); el.setAttribute("y", cur >= c ? el.dataset.y1 : el.dataset.y0);
     });
     document.querySelectorAll("[data-yearlabel]").forEach(el => {
-      const c = code(el.dataset.yearlabel); el.textContent = cur >= c ? el.dataset.t1 : el.dataset.t0;
+      const cur = at(el), c = code(el.dataset.yearlabel); el.textContent = cur >= c ? el.dataset.t1 : el.dataset.t0;
     });
-    prev = cur;
+    if (!perFrame) prev = globalCur;
   }
 
   /* ---------- sync with Reveal ---------- */
@@ -181,6 +187,81 @@
     if (prog) prog.style.width = ((i + (step + 1) / s.steps) / DECK.length * 1728) + "px";
   }
 
+
+  /* ---------- navigator: M (or the grid button) pulls the camera back over every frame, laid out in a grid and
+     shown complete; pick one with the mouse, the arrows or by typing its number, Enter to fly in, Esc to go back ---------- */
+  const FRAMES = []; { const seen = {}; DECK.forEach((s, i) => { const f = s.frame || s.id; if (!(f in seen)) { seen[f] = FRAMES.length; FRAMES.push({ f, i, el: document.getElementById(f) }); } }); }
+  const COLS = Math.max(1, Math.round(Math.sqrt(FRAMES.length * 1.5)));
+  const CELL_W = 2200, CELL_H = 1400;
+  const titleOf = fr => { const d = fr.el && fr.el.querySelector(".display"); const t = (d ? d.textContent : fr.f).replace(/\s+/g, " ").trim(); return t.length > 90 ? t.slice(0, 88) + "…" : t; };
+  let nav = null;
+  const hud = document.createElement("div"); hud.id = "navhud"; stage.appendChild(hud);
+  const navBtn = document.createElement("button"); navBtn.id = "navbtn"; navBtn.type = "button"; navBtn.title = "All slides (M)"; navBtn.setAttribute("aria-label", "All slides");
+  navBtn.innerHTML = '<svg viewBox="0 0 24 24" width="22" height="22"><g fill="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></g></svg>';
+  navBtn.addEventListener("click", e => { e.stopPropagation(); nav ? closeNav(nav.sel) : openNav(); });
+  document.body.appendChild(navBtn);
+  const gridPos = k => [(k % COLS) * CELL_W, Math.floor(k / COLS) * CELL_H];
+  function select(k) {
+    if (!nav) return; k = Math.max(0, Math.min(FRAMES.length - 1, k)); nav.sel = k;
+    FRAMES.forEach((fr, j) => fr.el && fr.el.classList.toggle("nav-sel", j === k));
+    hud.innerHTML = `<b>${String(FRAMES[k].i + 1).padStart(2, "0")}</b><span>${titleOf(FRAMES[k]).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</span><em>Enter to open · Esc to go back</em>`;
+  }
+  function openNav() {
+    if (nav) return;
+    const here = position();
+    nav = { sel: FRAMES.findIndex(fr => fr.f === (DECK[here.i].frame || DECK[here.i].id)), typed: "", from: here };
+    Reveal.configure({ keyboard: false });
+    document.body.classList.add("nav-open");
+    const rows = Math.ceil(FRAMES.length / COLS);
+    FRAMES.forEach((fr, k) => {
+      if (!fr.el) return;
+      const [x, y] = gridPos(k);
+      fr.el.style.transitionDelay = (Math.abs(k - nav.sel) * 14) + "ms";
+      fr.el.style.left = x + "px"; fr.el.style.top = y + "px";
+      let lab = fr.el.querySelector(":scope > .navlabel");
+      if (!lab) { lab = document.createElement("div"); lab.className = "navlabel"; fr.el.appendChild(lab); }
+      lab.innerHTML = `<b>${String(fr.i + 1).padStart(2, "0")}</b> ${titleOf(fr).replace(/&/g, "&amp;").replace(/</g, "&lt;")}`;
+    });
+    apply(here.cur, false, true);
+    const gw = COLS * CELL_W - (CELL_W - 1920), gh = rows * CELL_H - (CELL_H - 1080) + 160;
+    const z = Math.min(W / gw, (H - 120) / gh) * 0.96;
+    flyTo([gw / 2, gh / 2 + 30, z], true, 1300);
+    select(nav.sel);
+  }
+  function closeNav(k) {
+    if (!nav) return;
+    const target = k == null ? null : FRAMES[k];
+    const back = nav.from; const [gx, gy] = gridPos(k == null ? nav.sel : k);
+    const focus = target || FRAMES[FRAMES.findIndex(fr => fr.f === (DECK[back.i].frame || DECK[back.i].id))];
+    const [fx, fy] = gridPos(FRAMES.indexOf(focus));
+    document.body.classList.add("nav-leaving"); FRAMES.forEach(fr => fr.el && fr.el.classList.toggle("nav-focus", fr === focus));
+    flyTo([fx + 960, fy + 540, 1], true, 1050);                  // dive into the chosen frame where it sits in the grid
+    const done = () => {
+      document.body.classList.add("nav-snap");                  // then swap the layout back underneath, invisibly
+      FRAMES.forEach(fr => { if (!fr.el) return; const p = FRAME_POS[fr.f]; fr.el.style.transitionDelay = "0ms"; fr.el.style.left = p[0] + "px"; fr.el.style.top = p[1] + "px"; fr.el.classList.remove("nav-sel", "nav-focus"); });
+      document.body.classList.remove("nav-open", "nav-leaving");
+      nav = null; Reveal.configure({ keyboard: true });
+      if (target && target.i !== back.i) { Reveal.slide(target.i, 0, -1); update(false); }
+      else { apply(position().cur, false); flyTo(camFor(DECK[position().i], position().step), false); }
+      requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove("nav-snap")));
+    };
+    setTimeout(done, 1120);
+  }
+  addEventListener("keydown", e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (!nav) { if ((e.key === "m" || e.key === "M") && !e.repeat) { e.preventDefault(); openNav(); } return; }
+    e.preventDefault(); e.stopPropagation();
+    if (e.key === "Escape" || e.key === "m" || e.key === "M") return closeNav(null);
+    if (e.key === "Enter") { if (nav.typed) { const n = +nav.typed - 1; const k = FRAMES.findIndex(fr => fr.i === n); nav.typed = ""; if (k >= 0) return closeNav(k); } return closeNav(nav.sel); }
+    if (/^[0-9]$/.test(e.key)) { nav.typed = (nav.typed + e.key).slice(-2); const n = +nav.typed - 1; const k = FRAMES.findIndex(fr => fr.i === n); if (k >= 0) select(k); return; }
+    const mv = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: COLS, ArrowUp: -COLS }[e.key];
+    if (mv) select(nav.sel + mv);
+  }, true);
+  FRAMES.forEach((fr, k) => { if (!fr.el) return;
+    fr.el.addEventListener("mouseenter", () => nav && !document.body.classList.contains("nav-leaving") && select(k));
+    fr.el.addEventListener("click", e => { if (!nav || document.body.classList.contains("nav-leaving")) return; e.stopPropagation(); closeNav(k); });
+  });
+
   Reveal.initialize({
     width: W, height: H, hash: true, controls: false, progress: false, center: false,
     transition: "none", backgroundTransition: "none", overview: false, help: false, touch: false,
@@ -196,7 +277,7 @@
   /* touch events, not pointer events: the browser may claim a horizontal drag as a pan and cancel the pointer */
   let gesture = null;
   addEventListener("touchstart", e => {
-    if (e.touches.length !== 1) { gesture = null; return; }
+    if (e.touches.length !== 1 || nav) { gesture = null; return; }
     const t = e.touches[0];
     const zoomed = window.visualViewport && visualViewport.scale > 1.05;
     const skip = e.target.closest && e.target.closest("a, button, input, textarea, select, [data-no-nav]");
