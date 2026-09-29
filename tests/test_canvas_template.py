@@ -230,3 +230,11 @@ def test_browser_navigator_overview_select_dive_and_escape(stub_deck: Path):
             browser.close()
     finally:
         srv.shutdown()
+
+
+def test_world_layer_is_promoted_only_while_the_camera_flies():
+    engine = (TEMPLATE / "js" / "engine.js").read_text(encoding="utf-8")
+    css = (TEMPLATE / "css" / "deck.css").read_text(encoding="utf-8")
+    world_rule = re.search(r"#world\s*\{[^}]*\}", css).group(0)
+    assert "will-change" not in world_rule          # a permanent layer rasterises at 1x and blurs deep zooms
+    assert 'world.style.willChange = "transform"' in engine and 'world.style.willChange = "auto"' in engine

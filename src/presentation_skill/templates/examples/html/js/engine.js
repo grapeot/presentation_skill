@@ -92,7 +92,7 @@
   const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
   function flyTo(t, animate, fixedDur) {
     if (camAnim) cancelAnimationFrame(camAnim);
-    if (!cam || !animate) { setCam(t); return; }
+    if (!cam || !animate) { setCam(t); world.style.willChange = "auto"; return; }
     const a = cam.slice(), dx = t[0] - a[0], dy = t[1] - a[1];
     const dist = Math.hypot(dx, dy) * Math.min(a[2], t[2]);
     if (dist < 1 && Math.abs(t[2] - a[2]) < 1e-3) { setCam(t); return; }
@@ -106,8 +106,9 @@
       let lz = la + (lb - la) * e;
       if (far) lz += (Math.log(zDip) - Math.min(la, lb)) * Math.sin(Math.PI * k);   // arc out and back in
       setCam([a[0] + dx * e, a[1] + dy * e, Math.exp(lz)]);
-      if (k < 1) camAnim = requestAnimationFrame(step); else camAnim = null;
+      if (k < 1) camAnim = requestAnimationFrame(step); else { camAnim = null; world.style.willChange = "auto"; }   // settle: re-raster crisp at the new zoom
     };
+    world.style.willChange = "transform";                    // a compositor layer only while flying
     camAnim = requestAnimationFrame(step);
   }
 

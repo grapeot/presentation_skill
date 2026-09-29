@@ -39,7 +39,7 @@ body { font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: anti
 /* stage = fixed 1920x1080 design surface, scaled to fit */
 #stage { position: fixed; left: 50%; top: 50%; width: 1920px; height: 1080px; transform-origin: 50% 50%; z-index: 1; overflow: hidden; background: var(--paper); }
 #viewport { position: absolute; inset: 0; overflow: hidden; }
-#world { position: absolute; left: 0; top: 0; width: 42000px; height: 2400px; transform-origin: 0 0; will-change: transform; }
+#world { position: absolute; left: 0; top: 0; width: 42000px; height: 2400px; transform-origin: 0 0; }
 #grain { position: absolute; inset: 0; pointer-events: none; z-index: 5; opacity: .5; mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.45  0 0 0 0 0.40  0 0 0 0 0.32  0 0 0 .10 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>"); }
 
