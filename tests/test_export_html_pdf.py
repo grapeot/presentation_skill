@@ -269,15 +269,22 @@ def test_contact_sheet_grid():
 # the offline suite cannot run). It implements exactly what js/engine.js calls.
 REVEAL_STUB = """
 (function () {
-  const handlers = {}; let h = 0, f = -1, ready = false;
+  const handlers = {}; let h = 0, f = -1, ready = false, keyboard = true;
   const fire = ev => (handlers[ev] || []).forEach(cb => cb({}));
   const sections = () => [...document.querySelectorAll(".reveal .slides > section")];
   const frags = i => sections()[i].querySelectorAll(".fragment").length;
   window.Reveal = {
     initialize() {
       const deep = parseInt(location.hash.split("/")[1], 10); if (deep >= 0) h = deep;   // "#/2" deep links
+      // like Reveal: a bubble-phase keydown listener on the document, switched off by configure({ keyboard: false })
+      document.addEventListener("keydown", e => {
+        if (!keyboard) return;
+        if (e.key === "ArrowRight" || e.key === " ") Reveal.next();
+        else if (e.key === "ArrowLeft") Reveal.prev();
+      });
       setTimeout(() => { ready = true; fire("ready"); }, 0); return Promise.resolve();
     },
+    configure(o) { if (o && "keyboard" in o) keyboard = !!o.keyboard; },
     on(ev, cb) { (handlers[ev] = handlers[ev] || []).push(cb); },
     isReady() { return ready; },
     getIndices() { return { h, v: 0, f: f < 0 ? undefined : f }; },

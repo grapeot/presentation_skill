@@ -123,5 +123,8 @@ Covers the HTML (canvas) template offline:
 
 - `tools/build_index.py` regenerates the frames block, every `data-in` / `data-state` / slot reference names a slide in the table, and `tools/copy_to_js.py` round-trips the copy
 - the engine keeps the canvas on portrait phones (`scrollActivationWidth: null`) and handles touch (`touchend`, `[data-no-nav]`), and the CSS sets `touch-action: manipulation`
+- the engine has the navigator (`openNav` / `closeNav`, the per-frame `apply` mode, `#navbtn`, `#navhud`, a capture-phase key listener that suspends Reveal's keyboard) and the CSS has its block, hidden in PDF export
 
 One browser test reuses the stub Reveal and the skip rule from `tests/test_export_html_pdf.py`. At 390×844 with touch and mobile emulation it checks that `#/2` lands on slide index 2, a right tap advances, a left tap goes back, CDP swipes go both ways, and neither a two-finger pinch nor a mouse click navigates. The stub cannot reproduce Reveal's scroll view; check that against a vendored deck when the engine's Reveal options change.
+
+A second browser test opens the navigator on the stub deck: M opens it with every frame labelled and in its final state; the arrows and Enter select and dive in; M then Esc returns without navigating; Reveal's keyboard comes back; the corner button, hover and a typed number all select; the button is hidden under `html.pdf-export`.

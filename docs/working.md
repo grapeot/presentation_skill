@@ -157,3 +157,12 @@ Known limitations:
 - Real Reveal (5.2.1, vendored with `npm run vendor` into a CLI-scaffolded deck, same viewport): `#/2` landed on index 2 with scroll view off and the folio at 03 / 05. Tap right, tap left, CDP swipes both ways, the keyboard, pinch, mouse click and a `[data-no-nav]` element all behaved as intended, with no console errors and no requests leaving localhost. The same script on the previous engine reproduced the bug: scroll view on, the title slide shown, and taps, swipes and arrow keys all dead.
 - `start-server.py` returned `Cache-Control: no-store` on `index.html`, JS and vendored files.
 - Validation: `.venv/bin/python -m pytest -q` gave 91 passed locally with Chromium; a fresh `.[dev]` environment without Playwright (as in CI) gave 85 passed and 6 skipped. The scaffold smoke (`--mode html`, vendored, `tools/shoot.py`) gave 12 shots, 0 errors, 0 failed or external requests and 0 missing slots.
+
+## 2026-09-28 — Slide navigator for HTML canvas decks
+
+- Press M, or the round grid button in the bottom-right corner (it also works on touch). The camera pulls back while every frame flies from its row into a grid, each shown complete in its own final state, with a number and title label; a HUD names the selected slide.
+- Select with the arrows, the mouse or a typed number. Enter or a click dives into the chosen frame; the other frames fade, the layout swaps back invisibly and Reveal jumps there. Esc or M returns to where you were. Reveal's keyboard is suspended while it is open, and touch navigation ignores it.
+- The engine gains a per-frame mode of `apply()` and a fixed-duration option for `flyTo()`. The PDF exporter hides the button (`html.pdf-export`).
+- Ported from a real 42-slide deck where it was built and used.
+- Tests: an offline check of the engine and CSS contract, plus a browser test on the stub Reveal (overview open, every frame in its final state, arrows, Enter, M then Esc, the keyboard restored, the corner button, hover, a typed number, hidden in PDF export). The stub now models Reveal's bubble-phase key listener and `configure({ keyboard })`.
+- Validation: 93 passed locally, three consecutive runs. The scaffold smoke (`--mode html`, vendored, `tools/shoot.py`) gave 12 shots, 0 errors, 0 failed or external requests and 0 missing slots.

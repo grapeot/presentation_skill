@@ -51,6 +51,7 @@ Rules the engine enforces:
 - **The camera** is a per-slide or per-step `[dx, dy, zoom]` relative to the frame centre. Long moves arc out and back in (with zoom dipping in log space), so crossing between sections reads as travel.
 - **Live content** (such as charts, WebGL, or video) registers via `window.DECK_HOOKS[slideId] = { enter(step), leave() }`. Keep timers and listeners inside those hooks.
 - **Touch navigates** on phones and tablets: tap the left 30% to go back, anywhere else to advance, or swipe. Links, buttons and form fields are skipped; mark any other interactive element `data-no-nav`.
+- **The navigator** (press M, or the round grid button in the corner) pulls the camera back while every frame flies into a grid, each shown in its own final state, with numbers and titles. Pick with the arrows, the mouse or a typed number; Enter or a click dives in; Esc goes back. Reveal's keyboard is suspended while it is open.
 
 Here is the run order when editing: change the builder or `deck.js` → `python3 tools/build_index.py` → change copy → `python3 tools/copy_to_js.py` → `python3 tools/shoot.py --out verification/<round>`.
 
@@ -118,3 +119,4 @@ Most of what moves in a canvas deck is hand-written SVG, not generated pixels. T
 | Final state hides information | The printed page shows only the last beat: a flap board showing this year, a struck-through list without its replacement | Set `print: <step>` on the slide, or give the slide a handout layout under `html.pdf-export[data-print-slide="<id>"]` |
 | Portrait phone in scroll view | Below 435 px wide, Reveal 5 switched to its scroll view and bypassed the canvas: `#/9` opened the title slide and navigation stopped working | Keep `scrollActivationWidth: null` in `Reveal.initialize` (the scaffold sets it) |
 | Relying on Reveal's swipe | Swiping did nothing on a phone. The Reveal layer has `pointer-events: none`, so Reveal's own swipe never fires, and pointer-event handlers are cancelled on horizontal drags because the browser claims them as pans | Keep the engine's touch-event handler and `touch-action: manipulation`; do not rewrite it with pointer events |
+| Overview built from the global state | Frames in the overview showed only what the current slide had revealed, so later slides looked empty | Evaluate each element at its own frame's final step (`apply(cur, animate, perFrame)`), and restore the global state on close |
