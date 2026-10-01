@@ -171,3 +171,9 @@ Known limitations:
 
 - `#world` no longer carries a permanent `will-change: transform`. `flyTo()` sets it while the camera flies and clears it when the camera settles, so the browser re-rasters at the final zoom. A 7.4× fly-in into a miniature on the public example deck was blurry before the change and crisp after it.
 - Test: an offline check that the world rule has no `will-change` and that the engine toggles it. A Known traps row is added in `skills/html_decks.md`.
+
+## 2026-09-30 — Live reload covers canvas-deck assets
+
+- The shared `start-server.py` already live-reloads through python-livereload. It now also watches `imgs/` and `assets/`, where canvas decks keep plates, SVG art and exact assets; before this change, only `images/` was watched.
+- Verified on a scaffolded HTML deck over the LAN: saving `js/copy.js` reloads the page on the same slide and step, and an open speaker view shows the new notes.
+- The behaviour is documented in `skills/html_decks.md` and the deck README. An offline test pins the watch list.

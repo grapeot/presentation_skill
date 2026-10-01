@@ -51,6 +51,7 @@ Rules the engine enforces:
 - **The camera** is a per-slide or per-step `[dx, dy, zoom]` relative to the frame centre. Long moves arc out and back in (with zoom dipping in log space), so crossing between sections reads as travel.
 - **Live content** (such as charts, WebGL, or video) registers via `window.DECK_HOOKS[slideId] = { enter(step), leave() }`. Keep timers and listeners inside those hooks.
 - **Touch navigates** on phones and tablets: tap the left 30% to go back, anywhere else to advance, or swipe. Links, buttons and form fields are skipped; mark any other interactive element `data-no-nav`.
+- **Live reload while you review**: preview through `start-server.py`. Saving a frame, the copy (`js/copy.js`), CSS or an image reloads every open page on the same slide and step, and an open speaker view shows the new notes. Phones on the LAN reload too (`--host 0.0.0.0`).
 - **The navigator** (press M, or the round grid button in the corner) pulls the camera back while every frame flies into a grid, each shown in its own final state, with numbers and titles. Pick with the arrows, the mouse or a typed number; Enter or a click dives in; Esc goes back. Reveal's keyboard is suspended while it is open.
 
 Here is the run order when editing: change the builder or `deck.js` → `python3 tools/build_index.py` → change copy → `python3 tools/copy_to_js.py` → `python3 tools/shoot.py --out verification/<round>`.

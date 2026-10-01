@@ -238,3 +238,10 @@ def test_world_layer_is_promoted_only_while_the_camera_flies():
     world_rule = re.search(r"#world\s*\{[^}]*\}", css).group(0)
     assert "will-change" not in world_rule          # a permanent layer rasterises at 1x and blurs deep zooms
     assert 'world.style.willChange = "transform"' in engine and 'world.style.willChange = "auto"' in engine
+
+
+def test_dev_server_reloads_on_everything_a_canvas_deck_loads():
+    server = (ROOT / "src" / "presentation_skill" / "templates" / "common" / "start-server.py").read_text(encoding="utf-8")
+    watched = set(re.findall(r"server\.watch\('([^']+)'\)", server))
+    for pattern in ("*.html", "js/**/*.js", "css/**/*.css", "imgs/**/*", "assets/**/*"):
+        assert pattern in watched, pattern

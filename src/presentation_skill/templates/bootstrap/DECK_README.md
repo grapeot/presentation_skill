@@ -33,7 +33,7 @@ See `examples/image/` for a complete reference deck (same layout as the root whe
 3. Edit the slide table in `js/deck.js` and the frames in `tools/build_index.py`, then run `python3 tools/build_index.py`.
 4. Write the copy through the writer packet in `copy/` (templates included), then run `python3 tools/copy_to_js.py`.
 5. Verify with `python3 tools/shoot.py --out verification/round1` and run a critic round on the contact sheets.
-6. Preview with `start-server.py`; press S for the speaker view.
+6. Preview with `start-server.py`; press S for the speaker view. Pages reload on their own when you save (the slide and step are kept), so you can edit notes with the speaker view open.
 
 See `examples/html/` for the reference canvas deck and the skill's `html_decks.md` for the full contract.
 
