@@ -20,6 +20,8 @@ def start_server(port=8080, host='localhost', open_browser=True):
     server.watch('js/**/*.js')
     server.watch('js/**/*.json')
     server.watch('images/**/*')
+    server.watch('imgs/**/*')        # HTML canvas decks: plates, SVG art, exact assets
+    server.watch('assets/**/*')
     server.watch('css/**/*.css')
 
     display_host = 'localhost' if host in ('localhost', '127.0.0.1') else host
