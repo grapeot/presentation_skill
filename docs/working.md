@@ -2,6 +2,11 @@
 
 ## Changelog
 
+### 2026-10-07
+
+- Expanded `skills/speaker_notes.md` with lessons from a full podium-voice revision of a teaching deck that ended with a course offer: keep the speaker's own contrasts and use spoken connectors (section 1); a new "Setup Before Payoff" section (introduce the frame before its parts, introduce terms once, answer the obvious question in the next breath, transitions need a reason, no contradictory handoffs); "Audience Vocabulary" (pair jargon with plain words, disambiguate everyday words, drop plumbing, don't speak the planning metaphor, frame options as options); "Voice, Attribution, and Fidelity" (we vs I, cover co-presenters' parts, verify anecdotes against the primary record); "Time Budget and Compression" (about 135 wpm with a 10-15% reserve, cut points not connectives, re-read after compression, keep click markers in sync); and "Closing Offer" (bridge from the talk, one story in depth, proof on screen, real deadlines, links with the offer pre-applied). Added five Known Traps rows and a fifth Rewrite QA pass.
+- Updated the speaker-notes pointer in `skills/skill_presentation.md`. Docs only; no code changes.
+
 ### 2026-09-11
 
 - Upgraded the OpenAI image backend from `gpt-image-2` to the GPT Image 2.5 family. Two variants at the same price: `gpt-image-2.5-flare` (speed-first) and `gpt-image-2.5-sunburst` (precision-first). Variant defaults to size (`1K -> flare`, `2K/4K -> sunburst`) with a `--variant auto|flare|sunburst` override.
