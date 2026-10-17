@@ -188,3 +188,15 @@ Known limitations:
 - The HTML canvas template's display serif moves from Fraunces to Newsreader (variable, optical size and weight axes, OFL), matching the house template of a recent course deck. Body text stays Inter and numbers stay JetBrains Mono. `.display` is now weight 600 with -0.015 em tracking; the Fraunces-only `SOFT`/`WONK` settings are gone.
 - `package.json` depends on `@fontsource-variable/newsreader`, and `tools/vendor.mjs` vendors `newsreader-latin-opsz-{normal,italic}.woff2`.
 - Verified on the example deck vendored before and after the change: all five slides render at their final step with Newsreader, Inter and JetBrains Mono loaded and no page errors; the cover title wraps to two lines and still fits. Offline tests pass.
+
+## 2026-10-17 — Lessons from a live course deck: navigator input, jumps, notes, presenting, publishing
+
+Ported from a 34-slide live-class deck built on this template, where each item was used in class or fixed after a failure.
+
+- Navigator: scroll wheel or trackpad moves one frame per 60 px of travel (accumulated); typed digits show in the HUD with a caret and reset after a 1.5 s pause; Backspace, PageUp/PageDown and Home/End; A plus a digit selects an appendix slide. A dive from the overview pushes the return stack, so R comes back.
+- Jump chips (`data-goto="slide.step"`) with a return stack on R, and `{ appendix: true }` slides numbered A1… that plain "next" never enters. The guard tracks the last index itself, so it works with the test stub's empty event objects. A chip inside an element that has not appeared ignores clicks.
+- Frames are looked up inside the world layer, not with `document.getElementById`, so Reveal sections with the same ids can never shadow them (that bug emptied the overview in the course deck).
+- Speaker notes: `[click]` paragraphs render as "▶ click N" and bracketed paragraphs as stage directions. `tools/copy_to_js.py` now fails on a click-cue count that differs from `steps - 1` and on a spoken sentence over 22 words.
+- `start-server.py --present` serves without live reload; `tools/publish.py` stages `dist/` with runtime files only, notes emptied and everything world-readable (a 700 folder once uploaded as a 403).
+- Docs: `skills/html_decks.md` (engine rules, a Publishing section, a composition rule on rationing the strongest device, four Known traps) and the deck README.
+- Validation: 99 passed. Browser tests ran with Playwright 1.61 (the new test covers the appendix guard, chip jump and R return, a hidden chip, typed digits in the HUD and the wheel). One failure is pre-existing and unrelated: `test_browser_export_template_with_notes` fails identically on origin/master in this environment (letter-spaced text extraction from the PDF). The same features were also checked against real Reveal 5 on the vendored example deck.

@@ -1,16 +1,42 @@
 #!/usr/bin/env python3
 """
-HTTP server with live reload for running HTML slides
+HTTP server with live reload for running HTML slides.
+
+--present serves the same files without live reload, for the window you present from: a file saved during the talk
+must never reload the page mid-sentence. Edit with the default mode, present with --present.
 """
 
 import webbrowser
 import os
 import argparse
-from livereload import Server
+import functools
+import http.server
+
+
+def start_present_server(port=8080, host='localhost', open_browser=True):
+    """Serve the deck as plain static files: no live reload, nothing injected into the page."""
+    class Handler(http.server.SimpleHTTPRequestHandler):
+        def end_headers(self):
+            self.send_header('Cache-Control', 'no-store')
+            super().end_headers()
+
+        def log_message(self, *args):
+            pass
+
+    display_host = 'localhost' if host in ('localhost', '127.0.0.1') else host
+    print(f"Presenting at http://{display_host}:{port} (live reload off)")
+    if open_browser:
+        webbrowser.open(f"http://{display_host}:{port}")
+    server = http.server.ThreadingHTTPServer((host, port), functools.partial(Handler, directory='.'))
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
+        print("\nServer stopped")
 
 
 def start_server(port=8080, host='localhost', open_browser=True):
     """Start HTTP server with live reload."""
+    from livereload import Server
     server = Server()
     # Always serve the current files, so a phone refresh picks up edits.
     server.setHeader('Cache-Control', 'no-store')
@@ -48,6 +74,8 @@ def build_parser():
                         help="Bind host (default: localhost). Use 0.0.0.0 to expose on LAN.")
     parser.add_argument("--no-browser", action="store_true",
                         help="Don't auto-open the browser")
+    parser.add_argument("--present", action="store_true",
+                        help="Serve without live reload, for the window you present from")
     return parser
 
 
@@ -56,4 +84,5 @@ if __name__ == "__main__":
 
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    start_server(args.port, host=args.host, open_browser=not args.no_browser)
+    serve = start_present_server if args.present else start_server
+    serve(args.port, host=args.host, open_browser=not args.no_browser)

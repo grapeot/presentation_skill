@@ -34,6 +34,8 @@ See `examples/image/` for a complete reference deck (same layout as the root whe
 4. Write the copy through the writer packet in `copy/` (templates included), then run `python3 tools/copy_to_js.py`.
 5. Verify with `python3 tools/shoot.py --out verification/round1` and run a critic round on the contact sheets.
 6. Preview with `start-server.py`; press S for the speaker view. Pages reload on their own when you save (the slide and step are kept), so you can edit notes with the speaker view open.
+7. Present from `start-server.py --present` (no live reload, so a save never reloads the room's screen). Press M for every slide: type a number, scroll or use the arrows. R returns after a jump.
+8. Publish with `python3 tools/publish.py`: `dist/` holds the runtime files without speaker notes; upload it without `--delete`.
 
 See `examples/html/` for the reference canvas deck and the skill's `html_decks.md` for the full contract.
 
