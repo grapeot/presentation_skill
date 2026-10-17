@@ -1,6 +1,6 @@
 /* ---------- fonts ---------- */
-@font-face { font-family: "Fraunces"; src: url(../vendor/fonts/fraunces-latin-full-normal.woff2) format("woff2"); font-weight: 100 900; font-style: normal; font-display: block; }
-@font-face { font-family: "Fraunces"; src: url(../vendor/fonts/fraunces-latin-full-italic.woff2) format("woff2"); font-weight: 100 900; font-style: italic; font-display: block; }
+@font-face { font-family: "Newsreader"; src: url(../vendor/fonts/newsreader-latin-opsz-normal.woff2) format("woff2"); font-weight: 200 800; font-style: normal; font-display: block; }
+@font-face { font-family: "Newsreader"; src: url(../vendor/fonts/newsreader-latin-opsz-italic.woff2) format("woff2"); font-weight: 200 800; font-style: italic; font-display: block; }
 @font-face { font-family: "Inter"; src: url(../vendor/fonts/inter-latin-opsz-normal.woff2) format("woff2"); font-weight: 100 900; font-style: normal; font-display: block; }
 @font-face { font-family: "JetBrains Mono"; src: url(../vendor/fonts/jetbrains-mono-latin-400-normal.woff2) format("woff2"); font-weight: 400; font-display: block; }
 @font-face { font-family: "JetBrains Mono"; src: url(../vendor/fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2"); font-weight: 500; font-display: block; }
@@ -21,7 +21,7 @@
   --gold: #9c7630;
   --ease: cubic-bezier(.65, 0, .35, 1);
   --ease-out: cubic-bezier(.22, 1, .36, 1);
-  --serif: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --serif: "Newsreader", "Iowan Old Style", Georgia, serif;
   --sans: "Inter", "Helvetica Neue", Arial, sans-serif;
   --mono: "JetBrains Mono", "SF Mono", Menlo, monospace;
 }
@@ -86,7 +86,7 @@ body { font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: anti
 
 /* ---------- type ---------- */
 .kicker { font: 600 16px/1.2 var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--ink-3); }
-.display { font-family: var(--serif); font-optical-sizing: auto; font-variation-settings: "SOFT" 30, "WONK" 0; font-weight: 380; letter-spacing: -.02em; color: var(--ink); }
+.display { font-family: var(--serif); font-optical-sizing: auto; font-weight: 600; letter-spacing: -.015em; color: var(--ink); }
 .h1 { font-size: 96px; line-height: 1.02; }
 .h2 { font-size: 64px; line-height: 1.08; }
 .h3 { font-size: 44px; line-height: 1.15; }

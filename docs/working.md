@@ -182,3 +182,9 @@ Known limitations:
 - The shared `start-server.py` already live-reloads through python-livereload. It now also watches `imgs/` and `assets/`, where canvas decks keep plates, SVG art and exact assets; before this change, only `images/` was watched.
 - Verified on a scaffolded HTML deck over the LAN: saving `js/copy.js` reloads the page on the same slide and step, and an open speaker view shows the new notes.
 - The behaviour is documented in `skills/html_decks.md` and the deck README. An offline test pins the watch list.
+
+## 2026-10-17 — Display face: Newsreader
+
+- The HTML canvas template's display serif moves from Fraunces to Newsreader (variable, optical size and weight axes, OFL), matching the house template of a recent course deck. Body text stays Inter and numbers stay JetBrains Mono. `.display` is now weight 600 with -0.015 em tracking; the Fraunces-only `SOFT`/`WONK` settings are gone.
+- `package.json` depends on `@fontsource-variable/newsreader`, and `tools/vendor.mjs` vendors `newsreader-latin-opsz-{normal,italic}.woff2`.
+- Verified on the example deck vendored before and after the change: all five slides render at their final step with Newsreader, Inter and JetBrains Mono loaded and no page errors; the cover title wraps to two lines and still fits. Offline tests pass.
