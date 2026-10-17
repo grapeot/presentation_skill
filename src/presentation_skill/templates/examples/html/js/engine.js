@@ -11,6 +11,11 @@
      data-bar / data-follow / data-yearlabel       SVG bar height, label y, label text per state
      data-slot="slide.slot"                        filled from window.COPY (the writer's copy)
      data-no-nav                                   touches inside never navigate (a, button and form fields are skipped already)
+     data-goto="slide.step"                        a jump chip (a button): jumps there; R returns to the exact slide and step
+   Slide table extras (js/deck.js opts): { appendix: true } = reached only through a jump chip; plain "next" never
+   walks from the last main slide into it. Appendix slides are numbered A1, A2 ... after the main deck.
+   Speaker notes (copy.md "### notes"): a paragraph "[click]" marks a build step; a paragraph wholly in [brackets]
+   is a stage direction, shown in a different style and not read aloud.
    Optional per-slide hooks for live content (charts, WebGL, video):
      window.DECK_HOOKS = { slideId: { enter(step) {}, leave() {} } } */
 (function () {
@@ -18,6 +23,9 @@
   const stage = document.getElementById("stage");
   const world = document.getElementById("world");
   const DECK = window.DECK, COPY = window.COPY || {};
+  /* look frames up inside the world: if a Reveal section ever carries the same id (for readable hash URLs),
+     document.getElementById would return the section, and the navigator would lay out nothing */
+  const frameEl = f => world.querySelector("#" + CSS.escape(f));
 
   /* ---------- fit the 1920x1080 stage into the window ---------- */
   function fit() {
@@ -55,13 +63,16 @@
     return IDX[id] * 100 + (+st || 0);
   };
   const slideNo = i => i;
+  const MAIN = DECK.filter(s => !s.appendix).length;
+  const NO = {}; { let n = 0, a = 0; DECK.forEach(s => { NO[s.id] = s.appendix ? "A" + (++a) : String(++n).padStart(2, "0"); }); }
+  const esc = t => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;");
 
   /* ---------- lay frames out on the sheet in slide order ---------- */
   const FRAME_POS = {}; let k = 0;
   DECK.forEach(s => {
     const f = s.frame || s.id;
     if (f in FRAME_POS) return;
-    const el = document.getElementById(f);
+    const el = frameEl(f);
     if (!el) { console.warn("missing frame", f); return; }
     FRAME_POS[f] = [k * 2200, 0]; el.style.left = (k * 2200) + "px"; el.style.top = "0px"; k++;
   });
@@ -81,7 +92,12 @@
     for (let k = 1; k < s.steps; k++) { const f = document.createElement("span"); f.className = "fragment"; sec.appendChild(f); }
     const notes = document.createElement("aside"); notes.className = "notes";
     const n = (COPY[s.id] && COPY[s.id].notes) || "";
-    notes.innerHTML = n.split(/\n\s*\n/).map(p => `<p>${p.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</p>`).join("");
+    let click = 0;
+    notes.innerHTML = n.split(/\n\s*\n/).map(p => p.trim()).filter(Boolean).map(p =>
+      /^`?\[click\]`?$/i.test(p) ? `<p><b>▶ click ${++click}</b></p>`
+      : /^`?\[[^\]]+\]`?$/.test(p) ? `<p style="color:#7a5a2b;background:#f3ead8;border-left:4px solid #b8863b;padding:6px 10px;border-radius:4px"><i>${esc(p.replace(/^`|`$/g, ""))}</i></p>`
+      : `<p>${esc(p)}</p>`).join("");
+    if (click && click !== s.steps - 1) console.error(`notes for ${s.id} have ${click} click cues, the slide has ${s.steps - 1} clicks`);
     sec.appendChild(notes);
     slidesEl.appendChild(sec);
   });
@@ -183,15 +199,44 @@
     flyTo(camFor(s, step), animate);
     const part = document.getElementById("part"), folio = document.getElementById("folio");
     if (part) part.textContent = s.part || "";
-    if (folio) folio.textContent = String(i + 1).padStart(2, "0") + " / " + String(DECK.length).padStart(2, "0");
+    if (folio) folio.textContent = NO[s.id] + " / " + String(MAIN).padStart(2, "0");
     const prog = document.getElementById("progress");
-    if (prog) prog.style.width = ((i + (step + 1) / s.steps) / DECK.length * 1728) + "px";
+    if (prog) prog.style.width = (Math.min(1, (s.appendix ? MAIN : i + (step + 1) / s.steps) / MAIN) * 1728) + "px";
   }
 
 
+  /* ---------- jumps: any [data-goto="slide.step"]; R returns to where the last jump left. Plain "next" never
+     walks from the last main slide into the appendix. ---------- */
+  const back = []; let jumping = false, lastIdx = 0;
+  function goto(target) {
+    const [id, st] = target.split("."); if (!(id in IDX)) { console.warn("unknown jump target", target); return; }
+    const p = position(); back.push([p.i, p.step]);
+    jumping = true; Reveal.slide(IDX[id], 0, (+st || 0) - 1); jumping = false;
+  }
+  document.addEventListener("click", e => {
+    const el = e.target.closest && e.target.closest("[data-goto]");
+    if (!el || el.disabled || document.body.classList.contains("nav-open")) return;
+    e.preventDefault(); e.stopPropagation(); goto(el.dataset.goto);
+    /* never leave focus on a chip: a focused button turns the presenter's next Space into a second jump */
+    if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+  });
+  document.addEventListener("mousedown", e => { if (e.target.closest && e.target.closest("[data-goto]")) e.preventDefault(); });
+  addEventListener("keydown", e => {
+    if (e.metaKey || e.ctrlKey || e.altKey || e.repeat || document.body.classList.contains("nav-open")) return;
+    /* R, not B: B and "." are Reveal's blackout keys, which also freeze navigation until pressed again */
+    if ((e.key === "r" || e.key === "R") && back.length) {
+      e.preventDefault(); const [i, st] = back.pop(); jumping = true; Reveal.slide(i, 0, st - 1); jumping = false;
+    }
+  });
+  Reveal.on("slidechanged", () => {
+    const i = position().i, s = DECK[i];
+    if (s && s.appendix && !jumping && !DECK[lastIdx].appendix) { Reveal.slide(lastIdx, 0, DECK[lastIdx].steps - 2); return; }
+    lastIdx = i;
+  });
+
   /* ---------- navigator: M (or the grid button) pulls the camera back over every frame, laid out in a grid and
      shown complete; pick one with the mouse, the arrows or by typing its number, Enter to fly in, Esc to go back ---------- */
-  const FRAMES = []; { const seen = {}; DECK.forEach((s, i) => { const f = s.frame || s.id; if (!(f in seen)) { seen[f] = FRAMES.length; FRAMES.push({ f, i, el: document.getElementById(f) }); } }); }
+  const FRAMES = []; { const seen = {}; DECK.forEach((s, i) => { const f = s.frame || s.id; if (!(f in seen)) { seen[f] = FRAMES.length; FRAMES.push({ f, i, el: frameEl(f) }); } }); }
   const COLS = Math.max(1, Math.round(Math.sqrt(FRAMES.length * 1.5)));
   const CELL_W = 2200, CELL_H = 1400;
   const titleOf = fr => { const d = fr.el && fr.el.querySelector(".display"); const t = (d ? d.textContent : fr.f).replace(/\s+/g, " ").trim(); return t.length > 90 ? t.slice(0, 88) + "…" : t; };
@@ -205,12 +250,26 @@
   function select(k) {
     if (!nav) return; k = Math.max(0, Math.min(FRAMES.length - 1, k)); nav.sel = k;
     FRAMES.forEach((fr, j) => fr.el && fr.el.classList.toggle("nav-sel", j === k));
-    hud.innerHTML = `<b>${String(FRAMES[k].i + 1).padStart(2, "0")}</b><span>${titleOf(FRAMES[k]).replace(/&/g, "&amp;").replace(/</g, "&lt;")}</span><em>Enter to open · Esc to go back</em>`;
+    renderHud();
+  }
+  function renderHud() {
+    const fr = FRAMES[nav.sel];
+    const no = nav.typed ? `<b class="typing">${esc(nav.typed)}<i>_</i></b>` : `<b>${NO[DECK[fr.i].id]}</b>`;
+    hud.innerHTML = `${no}<span>${esc(titleOf(fr))}</span><em>Type a number · scroll · Enter to open · Esc to go back</em>`;
+  }
+  const findNo = no => FRAMES.findIndex(fr => NO[DECK[fr.i].id] === no);
+  /* typed digits select as you type ("2", "4" lands on 24); A then digits for the appendix; a 1.5 s pause starts over */
+  function typeKey(ch) {
+    clearTimeout(nav.typedTimer);
+    nav.typed = (nav.typed + ch).slice(-2);
+    const k = nav.typed[0] === "A" ? findNo(nav.typed) : findNo(nav.typed.padStart(2, "0"));
+    if (k >= 0) select(k); else renderHud();
+    nav.typedTimer = setTimeout(() => { if (nav) { nav.typed = ""; renderHud(); } }, 1500);
   }
   function openNav() {
     if (nav) return;
     const here = position();
-    nav = { sel: FRAMES.findIndex(fr => fr.f === (DECK[here.i].frame || DECK[here.i].id)), typed: "", from: here };
+    nav = { sel: FRAMES.findIndex(fr => fr.f === (DECK[here.i].frame || DECK[here.i].id)), typed: "", from: here, wheel: 0 };
     Reveal.configure({ keyboard: false });
     document.body.classList.add("nav-open");
     const rows = Math.ceil(FRAMES.length / COLS);
@@ -221,7 +280,7 @@
       fr.el.style.left = x + "px"; fr.el.style.top = y + "px";
       let lab = fr.el.querySelector(":scope > .navlabel");
       if (!lab) { lab = document.createElement("div"); lab.className = "navlabel"; fr.el.appendChild(lab); }
-      lab.innerHTML = `<b>${String(fr.i + 1).padStart(2, "0")}</b> ${titleOf(fr).replace(/&/g, "&amp;").replace(/</g, "&lt;")}`;
+      lab.innerHTML = `<b>${NO[DECK[fr.i].id]}</b> ${esc(titleOf(fr))}`;
     });
     apply(here.cur, false, true);
     const gw = COLS * CELL_W - (CELL_W - 1920), gh = rows * CELL_H - (CELL_H - 1080) + 160;
@@ -232,8 +291,9 @@
   function closeNav(k) {
     if (!nav) return;
     const target = k == null ? null : FRAMES[k];
-    const back = nav.from; const [gx, gy] = gridPos(k == null ? nav.sel : k);
-    const focus = target || FRAMES[FRAMES.findIndex(fr => fr.f === (DECK[back.i].frame || DECK[back.i].id))];
+    clearTimeout(nav.typedTimer);
+    const from = nav.from; const [gx, gy] = gridPos(k == null ? nav.sel : k);
+    const focus = target || FRAMES[FRAMES.findIndex(fr => fr.f === (DECK[from.i].frame || DECK[from.i].id))];
     const [fx, fy] = gridPos(FRAMES.indexOf(focus));
     document.body.classList.add("nav-leaving"); FRAMES.forEach(fr => fr.el && fr.el.classList.toggle("nav-focus", fr === focus));
     flyTo([fx + 960, fy + 540, 1], true, 1050);                  // dive into the chosen frame where it sits in the grid
@@ -242,7 +302,7 @@
       FRAMES.forEach(fr => { if (!fr.el) return; const p = FRAME_POS[fr.f]; fr.el.style.transitionDelay = "0ms"; fr.el.style.left = p[0] + "px"; fr.el.style.top = p[1] + "px"; fr.el.classList.remove("nav-sel", "nav-focus"); });
       document.body.classList.remove("nav-open", "nav-leaving");
       nav = null; Reveal.configure({ keyboard: true });
-      if (target && target.i !== back.i) { Reveal.slide(target.i, 0, -1); update(false); }
+      if (target && target.i !== from.i) { back.push([from.i, from.step]); jumping = true; Reveal.slide(target.i, 0, -1); jumping = false; update(false); }
       else { apply(position().cur, false); flyTo(camFor(DECK[position().i], position().step), false); }
       requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.remove("nav-snap")));
     };
@@ -253,11 +313,21 @@
     if (!nav) { if ((e.key === "m" || e.key === "M") && !e.repeat) { e.preventDefault(); openNav(); } return; }
     e.preventDefault(); e.stopPropagation();
     if (e.key === "Escape" || e.key === "m" || e.key === "M") return closeNav(null);
-    if (e.key === "Enter") { if (nav.typed) { const n = +nav.typed - 1; const k = FRAMES.findIndex(fr => fr.i === n); nav.typed = ""; if (k >= 0) return closeNav(k); } return closeNav(nav.sel); }
-    if (/^[0-9]$/.test(e.key)) { nav.typed = (nav.typed + e.key).slice(-2); const n = +nav.typed - 1; const k = FRAMES.findIndex(fr => fr.i === n); if (k >= 0) select(k); return; }
-    const mv = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: COLS, ArrowUp: -COLS }[e.key];
-    if (mv) select(nav.sel + mv);
+    if (document.body.classList.contains("nav-leaving")) return;
+    if (e.key === "Enter") return closeNav(nav.sel);
+    if (e.key === "Backspace") { nav.typed = nav.typed.slice(0, -1); return renderHud(); }
+    if (/^[0-9aA]$/.test(e.key)) return typeKey(e.key.toUpperCase());
+    const mv = { ArrowRight: 1, ArrowLeft: -1, ArrowDown: COLS, ArrowUp: -COLS, PageDown: COLS, PageUp: -COLS, Home: -1e4, End: 1e4 }[e.key];
+    if (mv) { nav.typed = ""; select(nav.sel + mv); }
   }, true);
+  /* scroll or trackpad: one frame per notch of travel, accumulated, so a trackpad flick does not skip ten */
+  addEventListener("wheel", e => {
+    if (!nav || document.body.classList.contains("nav-leaving")) return;
+    e.preventDefault();
+    nav.wheel += Math.abs(e.deltaY) >= Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    const n = Math.trunc(nav.wheel / 60);
+    if (n) { nav.wheel -= n * 60; nav.typed = ""; select(nav.sel + n); }
+  }, { passive: false });
   FRAMES.forEach((fr, k) => { if (!fr.el) return;
     fr.el.addEventListener("mouseenter", () => nav && !document.body.classList.contains("nav-leaving") && select(k));
     fr.el.addEventListener("click", e => { if (!nav || document.body.classList.contains("nav-leaving")) return; e.stopPropagation(); closeNav(k); });
@@ -295,5 +365,5 @@
   }, { passive: true });
 
   /* test hook for the screenshot harness */
-  window.deckGoto = (i, step) => { Reveal.slide(i, 0, step - 1); update(false); };
+  window.deckGoto = (i, step) => { jumping = true; Reveal.slide(i, 0, step - 1); jumping = false; update(false); };
 })();

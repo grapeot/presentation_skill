@@ -41,7 +41,8 @@ This replaces our earlier HTML mode, where every slide was a separate static pag
 | `js/deck.js` | The slide table in speaking order: `id`, running-header `part`, `steps` (clicks), and optional `cam` |
 | `tools/build_index.py` | The frames; regenerates the block between `FRAMES:BEGIN` and `FRAMES:END` in `index.html` |
 | `js/engine.js` | Navigation and notes (via Reveal.js), frame layout, camera movement, and state application |
-| `js/copy.js` | The writer's copy, generated from `copy/copy.md` by `tools/copy_to_js.py` |
+| `js/copy.js` | The writer's copy, generated from `copy/copy.md` by `tools/copy_to_js.py`, which also checks the notes (click cues, breath gate) |
+| `tools/publish.py` | The public copy in `dist/`: runtime files only, speaker notes removed (see "Publishing" below) |
 | `css/deck.css` | Design tokens along with the motion and component vocabulary |
 
 Rules the engine enforces:
@@ -51,10 +52,22 @@ Rules the engine enforces:
 - **The camera** is a per-slide or per-step `[dx, dy, zoom]` relative to the frame centre. Long moves arc out and back in (with zoom dipping in log space), so crossing between sections reads as travel.
 - **Live content** (such as charts, WebGL, or video) registers via `window.DECK_HOOKS[slideId] = { enter(step), leave() }`. Keep timers and listeners inside those hooks.
 - **Touch navigates** on phones and tablets: tap the left 30% to go back, anywhere else to advance, or swipe. Links, buttons and form fields are skipped; mark any other interactive element `data-no-nav`.
-- **Live reload while you review**: preview through `start-server.py`. Saving a frame, the copy (`js/copy.js`), CSS or an image reloads every open page on the same slide and step, and an open speaker view shows the new notes. Phones on the LAN reload too (`--host 0.0.0.0`).
-- **The navigator** (press M, or the round grid button in the corner) pulls the camera back while every frame flies into a grid, each shown in its own final state, with numbers and titles. Pick with the arrows, the mouse or a typed number; Enter or a click dives in; Esc goes back. Reveal's keyboard is suspended while it is open.
+- **Live reload while you review**: preview through `start-server.py`. Saving a frame, the copy (`js/copy.js`), CSS or an image reloads every open page on the same slide and step, and an open speaker view shows the new notes. Phones on the LAN reload too (`--host 0.0.0.0`). **Present with `start-server.py --present`**, which serves the same files with no live reload: a file saved during the talk must never reload the room's screen mid-sentence.
+- **The navigator** (press M, or the round grid button in the corner) pulls the camera back while every frame flies into a grid, each shown in its own final state, with numbers and titles. Pick with the arrows (PageUp/PageDown by row, Home/End), the scroll wheel or trackpad (one frame per notch), hover, or a typed number: the digits show in the HUD as you type ("2", "4" lands on 24; A then a digit for the appendix; a 1.5 s pause starts over). Enter or a click dives in; Esc goes back. Reveal's keyboard is suspended while it is open, and a dive counts as a jump, so R returns.
+- **Jump chips and the appendix.** Any `<button class="jump" data-goto="slide.step">` jumps there; **R** returns to the exact slide and step it left (R, not B: B and "." are Reveal's blackout keys). Mark fallback or reference slides `{ appendix: true }` in `deck.js`: they are numbered A1, A2 … after the main deck, are reached only through a chip or the navigator, and plain "next" on the last main slide never walks into them. A chip inside an element that has not appeared yet ignores clicks.
+- **Speaker notes conventions** (in `copy.md` under `### notes`): a paragraph `[click]` marks each build step and shows as "▶ click N" in the speaker view; a paragraph wholly in square brackets, such as `[Run the live demo.]`, is a stage direction, shown in a different style and not read aloud. `tools/copy_to_js.py` fails when a slide's click cues do not equal its `steps - 1`, or when a spoken sentence runs over 22 words (the breath gate in [speaker_notes.md](speaker_notes.md)); stage directions are exempt.
 
 Here is the run order when editing: change the builder or `deck.js` → `python3 tools/build_index.py` → change copy → `python3 tools/copy_to_js.py` → `python3 tools/shoot.py --out verification/<round>`.
+
+### Publishing
+
+`python3 tools/publish.py` stages the public copy in `dist/` (`--with-notes` keeps the notes). Upload `dist/` to any static host; with rsync, never pass `--delete`, because other pages may live next to the deck. Three rules it enforces, each learnt the hard way:
+
+- **Notes are removed from the file, not hidden.** They live in `js/copy.js`, which every visitor downloads, so the public copy empties every `notes` field.
+- **Only what the page loads goes up**: `index.html`, `css/`, `js/`, `vendor/`, `imgs/`, `assets/`. Sources, tools and shots stay local.
+- **Everything is world-readable.** A folder that is `700` on your machine uploads as a `403` for every file inside it (a deck once went live without its stylesheet and fonts this way).
+
+After uploading, open the live URL in a browser, step through a few slides and check that the fonts load and the console is clean.
 
 ## Motion vocabulary
 
@@ -83,6 +96,7 @@ Most of what moves in a canvas deck is hand-written SVG, not generated pixels. T
 - Keep one primary relationship per frame. A claim is a headline, never a small grey eyebrow.
 - A visual device that recurs across frames must look identical every time it returns (the same card, the same question pair, the same ladder).
 - Text never sits on top of a plate that is being read; retire the plate while text beats run.
+- **Ration the strongest device.** If a deck has a few rules the audience should take away, give only those the heaviest treatment (for example a full-width dark band with a small "rule" tag), and set every other frame's takeaway as a quiet line: ink serif above a thin rule. When every frame ends in a band, none of them reads as the one to remember.
 
 ## PDF handout
 
@@ -122,3 +136,7 @@ Most of what moves in a canvas deck is hand-written SVG, not generated pixels. T
 | Relying on Reveal's swipe | Swiping did nothing on a phone. The Reveal layer has `pointer-events: none`, so Reveal's own swipe never fires, and pointer-event handlers are cancelled on horizontal drags because the browser claims them as pans | Keep the engine's touch-event handler and `touch-action: manipulation`; do not rewrite it with pointer events |
 | Overview built from the global state | Frames in the overview showed only what the current slide had revealed, so later slides looked empty | Evaluate each element at its own frame's final step (`apply(cur, animate, perFrame)`), and restore the global state on close |
 | A permanent `will-change: transform` on the world | A camera push-in to a small detail (say 7×) looked blurry: the browser rasterised the layer at 1× and scaled the bitmap | Set `will-change` only while the camera flies and clear it when it settles, so the browser re-rasters at the final zoom (the scaffold's `flyTo` does this) |
+| Reveal sections sharing the frames' ids | Giving each Reveal `<section>` the slide id (for readable hash URLs) made the navigator lay out nothing: `document.getElementById` found the hidden section first | Look frames up inside the world layer (`world.querySelector`), as the scaffold does |
+| A selection ring outside a clipping frame | A frame with `overflow: hidden` clipped its own `::after` ring in the overview, so nothing looked selected | Draw the selection with `outline` and `outline-offset`, which overflow does not clip |
+| A hidden chip still clickable | A jump chip faded out with opacity still caught a click on empty space, and a chip styled with `all: unset` lost the fade entirely | Keep `[data-in]:not(.on) [data-goto] { pointer-events: none; }`, and wrap a chip in the fading element instead of fading the chip |
+| Live reload in the presenting window | Saving a file during the talk reloaded the projected deck | Present from `start-server.py --present` (or the published copy); keep live reload for the editing window |

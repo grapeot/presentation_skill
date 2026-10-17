@@ -1,6 +1,6 @@
 /* ---------- fonts ---------- */
-@font-face { font-family: "Fraunces"; src: url(../vendor/fonts/fraunces-latin-full-normal.woff2) format("woff2"); font-weight: 100 900; font-style: normal; font-display: block; }
-@font-face { font-family: "Fraunces"; src: url(../vendor/fonts/fraunces-latin-full-italic.woff2) format("woff2"); font-weight: 100 900; font-style: italic; font-display: block; }
+@font-face { font-family: "Newsreader"; src: url(../vendor/fonts/newsreader-latin-opsz-normal.woff2) format("woff2"); font-weight: 200 800; font-style: normal; font-display: block; }
+@font-face { font-family: "Newsreader"; src: url(../vendor/fonts/newsreader-latin-opsz-italic.woff2) format("woff2"); font-weight: 200 800; font-style: italic; font-display: block; }
 @font-face { font-family: "Inter"; src: url(../vendor/fonts/inter-latin-opsz-normal.woff2) format("woff2"); font-weight: 100 900; font-style: normal; font-display: block; }
 @font-face { font-family: "JetBrains Mono"; src: url(../vendor/fonts/jetbrains-mono-latin-400-normal.woff2) format("woff2"); font-weight: 400; font-display: block; }
 @font-face { font-family: "JetBrains Mono"; src: url(../vendor/fonts/jetbrains-mono-latin-500-normal.woff2) format("woff2"); font-weight: 500; font-display: block; }
@@ -21,7 +21,7 @@
   --gold: #9c7630;
   --ease: cubic-bezier(.65, 0, .35, 1);
   --ease-out: cubic-bezier(.22, 1, .36, 1);
-  --serif: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --serif: "Newsreader", "Iowan Old Style", Georgia, serif;
   --sans: "Inter", "Helvetica Neue", Arial, sans-serif;
   --mono: "JetBrains Mono", "SF Mono", Menlo, monospace;
 }
@@ -86,7 +86,7 @@ body { font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: anti
 
 /* ---------- type ---------- */
 .kicker { font: 600 16px/1.2 var(--sans); letter-spacing: .18em; text-transform: uppercase; color: var(--ink-3); }
-.display { font-family: var(--serif); font-optical-sizing: auto; font-variation-settings: "SOFT" 30, "WONK" 0; font-weight: 380; letter-spacing: -.02em; color: var(--ink); }
+.display { font-family: var(--serif); font-optical-sizing: auto; font-weight: 600; letter-spacing: -.015em; color: var(--ink); }
 .h1 { font-size: 96px; line-height: 1.02; }
 .h2 { font-size: 64px; line-height: 1.08; }
 .h3 { font-size: 44px; line-height: 1.15; }
@@ -396,6 +396,9 @@ body.nav-open #chrome { opacity: 0; transition: opacity .4s; }
   box-shadow: 0 16px 40px -20px rgba(0,0,0,.35); transition: opacity .35s, transform .35s var(--ease-out); }
 body.nav-open:not(.nav-leaving) #navhud { opacity: 1; transform: translate(-50%, 0); }
 #navhud b { font: 500 30px/1 var(--mono); color: var(--problem); }
+#navhud b.typing { color: var(--ink); min-width: 2.4ch; }
+#navhud b i { font-style: normal; color: var(--problem); animation: navcaret 1s steps(1) infinite; }
+@keyframes navcaret { 50% { opacity: 0; } }
 #navhud span { font: 400 30px/1.2 var(--serif); color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 #navhud em { font: 500 15px/1 var(--sans); font-style: normal; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
 #navbtn { position: fixed; right: 18px; bottom: 18px; z-index: 50; width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--rule);
@@ -406,3 +409,12 @@ body.nav-open:not(.nav-leaving) #navhud { opacity: 1; transform: translate(-50%,
 /* the PDF exporter prints with screen media, so hide by its class as well as for print */
 @media print { #navbtn, #navhud { display: none !important; } }
 html.pdf-export #navbtn, html.pdf-export #navhud { display: none !important; }
+
+/* ---------- jump chips: a real <button data-goto="slide.step"> inside a frame; R returns ---------- */
+.jump { display: inline-flex; align-items: center; gap: 10px; padding: 10px 18px; cursor: pointer; pointer-events: auto;
+  font: 600 18px/1 var(--sans); letter-spacing: .12em; text-transform: uppercase; color: var(--ink); background: var(--card);
+  border: 1.5px solid var(--ink); border-radius: 0; }
+.jump:hover { background: var(--ink); color: var(--card); }
+/* a chip that has not appeared yet must not catch a stray click (opacity alone leaves it clickable) */
+[data-in]:not(.on) [data-goto], [data-goto][data-in]:not(.on) { pointer-events: none; }
+html.pdf-export .jump { display: none; }

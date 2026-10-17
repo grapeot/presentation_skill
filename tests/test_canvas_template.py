@@ -245,3 +245,141 @@ def test_dev_server_reloads_on_everything_a_canvas_deck_loads():
     watched = set(re.findall(r"server\.watch\('([^']+)'\)", server))
     for pattern in ("*.html", "js/**/*.js", "css/**/*.css", "imgs/**/*", "assets/**/*"):
         assert pattern in watched, pattern
+
+
+# ---------------------------------------------------------------- jumps, appendix, notes, navigator input
+
+
+def test_engine_has_jumps_appendix_and_navigator_input():
+    engine = (TEMPLATE / "js" / "engine.js").read_text(encoding="utf-8")
+    css = (TEMPLATE / "css" / "deck.css").read_text(encoding="utf-8")
+    # frames are looked up inside the world, so a Reveal section with the same id can never shadow one
+    assert 'world.querySelector("#" + CSS.escape(f))' in engine and "document.getElementById(f)" not in engine
+    # jump chips with a return stack (R), and an appendix that plain "next" never walks into
+    assert 'closest("[data-goto]")' in engine and "back.pop()" in engine and "s.appendix && !jumping" in engine
+    # the overview takes a scroll wheel and shows the digits being typed
+    assert 'addEventListener("wheel"' in engine and "{ passive: false }" in engine and "function typeKey(ch)" in engine
+    # speaker notes: [click] cues are numbered, bracketed paragraphs render as stage directions
+    assert "▶ click" in engine and "click cues" in engine
+    # a chip that has not appeared yet cannot be clicked
+    assert "[data-in]:not(.on) [data-goto]" in css
+
+
+def _run(deck: Path, *args: str) -> subprocess.CompletedProcess:
+    return subprocess.run([sys.executable, *args], cwd=deck, capture_output=True, text=True)
+
+
+def test_copy_to_js_checks_click_cues_and_the_breath_gate(tmp_path: Path):
+    deck = _copy(tmp_path)
+    md = deck / "copy" / "copy.md"
+    good = "Stages arrive in order.\n\n[click]\n\n[Point at the constraint box.]\n\nThen the constraint appears.\n\n[click]\n\nThen the takeaway."
+    base = md.read_text(encoding="utf-8")
+    old = "Stages arrive in order, then the constraint appears, then the takeaway."
+    md.write_text(base.replace(old, good), encoding="utf-8")
+    assert _run(deck, "tools/copy_to_js.py").returncode == 0
+    md.write_text(base.replace(old, good.replace("\n\n[click]\n\nThen the takeaway.", " Then the takeaway.")), encoding="utf-8")
+    r = _run(deck, "tools/copy_to_js.py")
+    assert r.returncode == 1 and "pipeline: 1 [click] cues, the slide has 2 clicks" in r.stdout
+    long = " ".join(["word"] * 23) + "."
+    md.write_text(base.replace(old, long), encoding="utf-8")
+    r = _run(deck, "tools/copy_to_js.py")
+    assert r.returncode == 1 and "23-word sentence" in r.stdout
+
+
+def test_publish_stages_runtime_files_without_notes(tmp_path: Path):
+    deck = _copy(tmp_path)
+    (deck / "vendor" / "reveal").mkdir(parents=True)
+    (deck / "vendor" / "reveal" / "reveal.js").write_text("", encoding="utf-8")
+    assert _run(deck, "tools/publish.py").returncode == 0
+    dist = deck / "dist"
+    assert (dist / "index.html").is_file() and (dist / "js" / "engine.js").is_file()
+    assert not (dist / "copy").exists() and not (dist / "tools").exists()
+    copy_js = (dist / "js" / "copy.js").read_text(encoding="utf-8")
+    assert "Every click either draws something" not in copy_js and '"notes": ""' in copy_js
+    assert all(p.stat().st_mode & 0o004 for p in dist.rglob("*"))           # world-readable, or the web server 403s
+    assert _run(deck, "tools/publish.py", "--out", "../outside").returncode != 0
+
+
+def test_present_mode_serves_without_live_reload():
+    server = (ROOT / "src" / "presentation_skill" / "templates" / "common" / "start-server.py").read_text(encoding="utf-8")
+    assert '"--present"' in server and "def start_present_server" in server
+    # livereload is imported only by the editing server, so --present runs without it
+    assert "from livereload import Server" in server.split("def start_server", 1)[1]
+
+
+@needs_browser
+def test_browser_jump_return_appendix_guard_and_wheel(stub_deck: Path):
+    import functools
+    import http.server
+    import threading
+
+    from playwright.sync_api import sync_playwright
+
+    table = stub_deck / "js" / "deck.js"
+    table.write_text(table.read_text(encoding="utf-8").replace(
+        'S("close", "IV · Say it", 2),',
+        'S("close", "IV · Say it", 2),\n    S("extra", "Appendix", 1, null, { appendix: true, frame: "title" }),'), encoding="utf-8")
+    index = stub_deck / "index.html"
+    index.write_text(index.read_text(encoding="utf-8").replace(
+        "</body>",
+        "<script>document.getElementById('close').insertAdjacentHTML('beforeend',"
+        " '<button class=\"jump\" type=\"button\" data-goto=\"extra.0\" style=\"position:absolute;left:160px;top:900px\">Appendix</button>');"
+        "</script>\n</body>"), encoding="utf-8")
+    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(stub_deck))
+    handler.func.log_message = lambda *args: None
+    srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            page = browser.new_page(viewport={"width": 1280, "height": 720})
+            errors = []
+            page.on("pageerror", lambda e: errors.append(str(e)))
+            page.on("console", lambda m: errors.append(m.text) if m.type == "error" else None)
+            page.goto(f"http://127.0.0.1:{srv.server_address[1]}/index.html#/0")
+            page.wait_for_function("document.body.classList.contains('ready')")
+            pos = lambda: page.evaluate("(() => { const i = Reveal.getIndices(); return i.h * 100 + (i.f == null ? -1 : i.f); })()")
+            closed = "!document.body.classList.contains('nav-open')"
+            assert page.text_content("#folio") == "01 / 05"         # the appendix is not counted
+
+            # "next" at the very end stays out of the appendix
+            page.evaluate("deckGoto(4, 1)")
+            page.keyboard.press("ArrowRight")
+            assert pos() == 400
+
+            # the chip jumps into the appendix; R returns to the exact slide and step
+            page.click("#close .jump")
+            assert pos() == 499 and page.text_content("#folio") == "A1 / 05"
+            page.keyboard.press("r")
+            assert pos() == 400
+
+            # a chip that has not appeared yet ignores clicks
+            page.evaluate("deckGoto(4, 0)")
+            page.evaluate("document.querySelector('#close .jump').setAttribute('data-in', 'close.1')")
+            page.evaluate("deckGoto(4, 0)")
+            assert page.evaluate("getComputedStyle(document.querySelector('#close .jump')).pointerEvents") == "none"
+
+            # overview: typed digits show in the HUD; the wheel moves one frame per notch
+            page.evaluate("deckGoto(0, 0)")
+            page.keyboard.press("m")
+            page.keyboard.press("0")
+            assert page.text_content("#navhud b") == "0_"
+            page.keyboard.press("3")
+            assert page.text_content("#navhud b") == "03_"
+            page.keyboard.press("Escape")
+            page.wait_for_function(closed, timeout=5000)
+            page.mouse.move(1, 1)                                    # park the pointer: hover also selects
+            page.keyboard.press("m")
+            page.wait_for_timeout(1500)
+            assert page.text_content("#navhud b") == "01"
+            page.mouse.wheel(0, 130)
+            assert page.text_content("#navhud b") == "03"           # 130 px of travel: two notches from 01
+            page.keyboard.press("Enter")
+            page.wait_for_function(closed, timeout=5000)
+            assert pos() == 199
+            page.keyboard.press("r")
+            assert pos() == -1
+            assert errors == []
+            browser.close()
+    finally:
+        srv.shutdown()
