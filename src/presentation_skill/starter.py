@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import shutil
 from pathlib import Path
@@ -100,3 +101,43 @@ def write_reveal_mode_starter(
 ) -> list[Path]:
     """Compatibility wrapper for the former "reveal" mode name."""
     return write_html_mode_starter(target_dir, topic, asset_policy)
+
+
+_PPTX_README = """# Editable PPTX deck
+
+Edit `slides.json`, put image plates in `plates/`, then build and look at the render:
+
+    presentation-skill build-pptx slides.json --render verification/render
+
+Every word on a slide stays a native text box. Spec format and the Google Slides
+handoff checklist are in the skill's `pptx_decks.md`.
+"""
+
+
+def write_pptx_mode_starter(
+    target_dir: Path,
+    topic: str,
+    asset_policy: AssetPolicy = AssetPolicy.GENERATED,
+) -> list[Path]:
+    """Scaffold an editable-PPTX deck: a one-slide spec to copy from, a plates folder and a README."""
+    target_dir.mkdir(parents=True, exist_ok=True)
+    (target_dir / "plates").mkdir(exist_ok=True)
+    spec = {
+        "theme": {"font": "Arial", "title_size": 30, "body_size": 20},
+        "slides": [{
+            "title": f"{topic}: the one claim this slide makes",
+            "elements": [
+                {"type": "bubble", "box": [0.8, 1.6, 6.0, 1.6], "line": "muted", "valign": "middle",
+                 "text": "A quote or example the speaker can point at.\n[[Speaker, date]]"},
+                {"type": "text", "style": "label", "box": [7.3, 1.6, 5.3, 1.2],
+                 "text": "**Label**\nOne sentence that supports the claim."},
+                {"type": "text", "style": "caption", "box": [0.8, 6.4, 11.8, 0.6],
+                 "text": "Caption: what the figure shows and why it matters here."},
+            ],
+            "notes": "Spoken notes: what the speaker says on this slide.",
+        }],
+    }
+    (target_dir / "slides.json").write_text(json.dumps(spec, indent=2), encoding="utf-8")
+    (target_dir / "README.md").write_text(_PPTX_README, encoding="utf-8")
+    _write_deck_plan(target_dir, topic, DeckMode.PPTX, asset_policy)
+    return _get_all_files(target_dir)

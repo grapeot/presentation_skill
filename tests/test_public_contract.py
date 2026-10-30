@@ -11,6 +11,7 @@ def test_exactly_one_root_skill():
         "critic_review.md",
         "generated_assets.md",
         "html_decks.md",
+        "pptx_decks.md",
         "reference.md",
         "skill_presentation.md",
         "speaker_notes.md",

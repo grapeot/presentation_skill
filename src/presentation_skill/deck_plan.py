@@ -7,6 +7,7 @@ from enum import Enum
 class DeckMode(str, Enum):
     IMAGE = "image"
     HTML = "html"
+    PPTX = "pptx"
     # Compatibility alias: this mode was briefly called "reveal".
     REVEAL = "reveal"
 
@@ -32,9 +33,18 @@ HTML_TRIGGERS = (
     "canvas deck",
     "exact copy",
     "exact text",
-    "editable deck",
     "live data",
     "progressive interaction",
+)
+
+# A deck someone will keep editing in PowerPoint or Google Slides.
+PPTX_TRIGGERS = (
+    "pptx",
+    "powerpoint",
+    "power point",
+    "google slides",
+    "editable deck",
+    "editable slides",
 )
 
 NO_GENERATED_ASSET_TRIGGERS = (
@@ -72,6 +82,8 @@ class SlideSpec:
 
 def choose_mode(user_request: str) -> DeckMode:
     normalized = user_request.casefold()
+    if any(trigger in normalized for trigger in PPTX_TRIGGERS):
+        return DeckMode.PPTX
     if any(trigger in normalized for trigger in HTML_TRIGGERS):
         return DeckMode.HTML
     return DeckMode.IMAGE

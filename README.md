@@ -30,6 +30,12 @@ scripts/presentation-skill "Technical briefing" --mode html --assets mixed --out
 
 `--mode reveal` remains a compatibility alias for `html`.
 
+Editable PPTX mode is for decks a co-author will keep editing in PowerPoint or Google Slides. Every word is a native text box and pictures are separate image plates, so the text survives an import into Google Slides. The deck is built from a JSON slide spec. See `skills/pptx_decks.md`; it needs the `[pptx]` extra, and `--render` needs LibreOffice and poppler.
+
+```bash
+scripts/presentation-skill build-pptx deck/slides.json --render deck/verification/render
+```
+
 ## PDF Export
 
 ```bash

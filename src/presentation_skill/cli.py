@@ -5,9 +5,9 @@ import sys
 from pathlib import Path
 
 from .deck_plan import AssetPolicy, DeckMode, choose_asset_policy, choose_mode
-from .starter import write_html_mode_starter, write_image_mode_starter
+from .starter import write_html_mode_starter, write_image_mode_starter, write_pptx_mode_starter
 
-_SUBCOMMANDS = {"init", "export-pdf", "prepare-asset"}
+_SUBCOMMANDS = {"init", "export-pdf", "prepare-asset", "build-pptx"}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -20,7 +20,7 @@ def build_parser() -> argparse.ArgumentParser:
     init = sub.add_parser("init", help="Create starter artifacts for a new deck")
     init.add_argument("topic", help="Presentation topic")
     init.add_argument("--request", default="", help="Original user request used to choose default mode")
-    init.add_argument("--mode", choices=["auto", "image", "html", "reveal"], default="auto")
+    init.add_argument("--mode", choices=["auto", "image", "html", "reveal", "pptx"], default="auto")
     init.add_argument(
         "--assets",
         choices=["auto", "none", "generated", "exact", "mixed"],
@@ -88,7 +88,44 @@ def build_parser() -> argparse.ArgumentParser:
     asset.add_argument("--padding", type=int, default=24)
     asset.add_argument("--crop", choices=["tight", "square", "none"], default="tight")
 
+    pptx = sub.add_parser(
+        "build-pptx",
+        help="Build an editable PPTX (native text boxes over image plates) from a JSON slide spec",
+    )
+    pptx.add_argument("spec", help="Slide spec JSON; image paths resolve relative to it")
+    pptx.add_argument("--output", default=None, help="Output .pptx (default: spec path with .pptx)")
+    pptx.add_argument("--render", default=None, metavar="DIR",
+                      help="Also render each slide to PNG plus a contact sheet into DIR (needs LibreOffice and pdftoppm)")
+    pptx.add_argument("--dpi", type=int, default=80, help="Render resolution (default 80)")
+
     return parser
+
+
+def _run_build_pptx(args: argparse.Namespace) -> int:
+    from .export_pptx import MissingDependencyError, RenderError, SpecError, build_pptx, render_pptx
+
+    try:
+        result = build_pptx(Path(args.spec), Path(args.output) if args.output else None)
+    except MissingDependencyError as exc:
+        print(exc)
+        return 3
+    except (SpecError, OSError) as exc:
+        print(exc)
+        return 2
+    for warning in result.warnings:
+        print(f"WARNING: {warning}")
+    print(f"{result.output} ({result.slides} slides)")
+    if args.render:
+        try:
+            pages = render_pptx(result.output, Path(args.render), dpi=args.dpi)
+        except MissingDependencyError as exc:
+            print(exc)
+            return 3
+        except RenderError as exc:
+            print(exc)
+            return 2
+        print(f"rendered {len(pages) - 1} slides; contact sheet: {pages[-1]}")
+    return 0
 
 
 def _run_init(args: argparse.Namespace) -> int:
@@ -101,6 +138,8 @@ def _run_init(args: argparse.Namespace) -> int:
     target = Path(args.output)
     if mode == DeckMode.IMAGE:
         written = write_image_mode_starter(target, args.topic, policy)
+    elif mode == DeckMode.PPTX:
+        written = write_pptx_mode_starter(target, args.topic, policy)
     else:
         written = write_html_mode_starter(target, args.topic, policy)
     for path in written:
@@ -214,6 +253,8 @@ def main(argv: list[str] | None = None) -> int:
         return _run_init(args)
     if args.command == "prepare-asset":
         return _run_prepare_asset(args)
+    if args.command == "build-pptx":
+        return _run_build_pptx(args)
     return _run_export_pdf(args)
 
 
