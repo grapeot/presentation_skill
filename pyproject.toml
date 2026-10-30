@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "presentation-skill"
 version = "0.1.0"
-description = "Public AI-agent skill for image-generated and HTML canvas presentation decks"
+description = "Public AI-agent skill for image-generated, HTML canvas and editable PPTX presentation decks"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -16,7 +16,8 @@ dependencies = []
 pdf = ["img2pdf>=0.5", "pypdf>=4.0"]
 pdf-html = ["playwright>=1.40", "pypdf>=4.0", "Pillow>=10.0"]
 assets = ["Pillow>=10.0"]
-dev = ["pytest>=8.0", "img2pdf>=0.5", "pypdf>=4.0", "Pillow>=10.0"]
+pptx = ["python-pptx>=1.0", "Pillow>=10.0"]
+dev = ["pytest>=8.0", "img2pdf>=0.5", "pypdf>=4.0", "Pillow>=10.0", "python-pptx>=1.0"]
 
 [project.scripts]
 presentation-skill = "presentation_skill.cli:main"

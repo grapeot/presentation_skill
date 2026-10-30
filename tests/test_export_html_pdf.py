@@ -378,16 +378,22 @@ def test_browser_export_template_with_notes(stub_deck: Path):
     assert len(reader.pages) == 10
     for page in reader.pages:
         assert round(float(page.mediabox.width)) == 1440 and round(float(page.mediabox.height)) == 810
-    texts = [page.extract_text() for page in reader.pages]
+    # Chromium positions glyphs one by one, so pypdf may return "A  r e f e r e n c e";
+    # compare with all whitespace removed.
+    texts = [re.sub(r"\s+", "", page.extract_text() or "") for page in reader.pages]
+
+    def has(i: int, phrase: str) -> bool:
+        return re.sub(r"\s+", "", phrase) in texts[i]
+
     # Slide pages carry their own frame only; the notes page carries notes, not the slide.
-    assert "A reference deck" in texts[0] and "Stages arrive" not in texts[0]
-    assert "vocabulary of the canvas mode" in texts[1] and "A reference deck" not in texts[1]
+    assert has(0, "A reference deck") and not has(0, "Stages arrive")
+    assert has(1, "vocabulary of the canvas mode") and not has(1, "A reference deck")
     # print: 0 on "pipeline" prints its first state: the step-2 caption is not there yet.
-    assert "Collect" in texts[2] and "made the pipeline necessary" not in texts[2]
+    assert has(2, "Collect") and not has(2, "made the pipeline necessary")
     # The default print state is the last step: the split card's step-2 takeaway is printed.
-    assert "patch half expires" in texts[4]
-    assert "6.2" in texts[6] and "18.7" in texts[6]
-    assert "Handout row" in texts[8] and not any("Handout row" in t for t in texts[:8])
+    assert has(4, "patch half expires")
+    assert has(6, "6.2") and has(6, "18.7")
+    assert has(8, "Handout row") and not any(has(i, "Handout row") for i in range(8))
     # Effects that PDF viewers render differently were re-drawn as images: the split card's
     # blurred shadows, its hatched background and the SVG hatch patterns of the bar chart.
     assert result.flattened["shadows"] > 0

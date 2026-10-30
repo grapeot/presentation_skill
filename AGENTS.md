@@ -4,10 +4,11 @@
 
 This repository packages a public-safe presentation creation skill for AI coding agents. It exposes one root skill at `skills/skill_presentation.md` and a small offline helper library for validating deck plans and generating starter artifacts.
 
-The skill unifies two presentation modes:
+The skill unifies three presentation modes:
 
 - Image-generated decks by default: the agent writes a deck plan, visual direction, and per-slide prompts, then uses the installing workspace's image generation capability to render full-slide images.
 - HTML canvas decks as a first-class alternative: one borderless animated sheet written in HTML, CSS and SVG, with exact content in the DOM and generated plates as bounded local assets. Reveal.js only supplies navigation, notes and the speaker view.
+- Editable PPTX decks for a co-author who keeps editing in PowerPoint or Google Slides: every word is a native text box over image plates, built from a JSON slide spec.
 
 ## Working Environment
 
@@ -29,6 +30,8 @@ The default test suite must stay offline. Do not add live image-generation tests
 - `starter.py` — CLI template copy and scaffold generation
 - `deck_plan.py` — mode selection and deck-plan validation contract (testable spec, not an AI planner)
 - `asset_prep.py` — deterministic alpha extraction, recoloring, and cropping for generated local assets
+- `export_pdf.py`, `export_html_pdf.py` — PDF export for image and HTML canvas decks
+- `export_pptx.py` — editable PPTX from a JSON slide spec, and an optional LibreOffice render for checking it
 
 It must not call external image APIs directly. Image generation belongs to the installing workspace, commonly through an image-generation skill or another user-configured tool.
 

@@ -123,3 +123,9 @@ def test_reveal_names_remain_compatibility_aliases(tmp_path: Path):
     assert any(path.name == "engine.js" for path in written)
     assert "Mode: html" in (tmp_path / "deck" / "deck_plan.md").read_text(encoding="utf-8")
     assert choose_mode("Build a reveal deck") == DeckMode.HTML
+
+
+def test_choose_mode_pptx_for_editable_office_decks():
+    assert choose_mode("Make an editable deck we can keep editing in Google Slides") == DeckMode.PPTX
+    assert choose_mode("Give me a PowerPoint for the board") == DeckMode.PPTX
+    assert choose_mode("An editable html deck") == DeckMode.HTML

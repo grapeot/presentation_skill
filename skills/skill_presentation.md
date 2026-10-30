@@ -5,7 +5,9 @@ description: >-
   full-slide visuals (outline_visual.md, visual_guideline.md, Reveal.js viewer).
   Also builds HTML canvas decks: one borderless animated sheet with a camera,
   written in HTML, CSS and SVG, elements drawn or split on each click, textless
-  plates, and copy drafted by a writing model and fact-checked by the builder. Use for slide
+  plates, and copy drafted by a writing model and fact-checked by the builder.
+  Also builds editable PPTX decks (native text boxes over image plates) for decks
+  that someone will keep editing in PowerPoint or Google Slides. Use for slide
   decks, keynotes, lectures, teaching decks, speaker notes, or presentation scaffolds.
 ---
 
@@ -23,9 +25,11 @@ We designed and validated the HTML (canvas) workflow specifically with Claude Op
 
 **In scope:** Comprehensive deck planning, establishing visual direction, generating slide images, building animated HTML canvas presentations, crafting local generated plates and iconography, drafting on-screen copy and speaker notes (collaborating with a dedicated writer model whenever available), automated screenshot verification, running independent critic reviews, and serving local previews.
 
-**Out of scope:** Modifying PPTX files, writing open-ended image prompts, and running generic design review checklists. Making raw calls to image generation APIs is the responsibility of the workspace where this skill gets installed (frequently via `image-generation-skill`), rather than this repository.
+**Out of scope:** Editing existing PPTX files (build new ones with `build-pptx`; edit someone else's deck with a PPTX editing tool), writing open-ended image prompts, and running generic design review checklists. Making raw calls to image generation APIs is the responsibility of the workspace where this skill gets installed (frequently via `image-generation-skill`), rather than this repository.
 
-**Mode rule:** Always default to **image** mode. You should switch to **html** mode (the canvas workflow detailed in [html_decks.md](html_decks.md)) whenever the user explicitly requests an HTML presentation, a deck that incorporates rich motion, fully editable or exact text copy, code blocks, live data feeds, clickable hyperlinks, multi-step progressive builds, or when they want to avoid full-slide image generation entirely. Keep in mind that your rendering mode and your asset policy are completely separate choices: an HTML deck typically takes advantage of generated illustration plates, so when a user asks for "no image generation", what you actually want is `html` configured with `assets: none`. Crucially, you must never silently downgrade image → html simply because image generation encounters an error.
+**Mode rule:** Always default to **image** mode. You should switch to **html** mode (the canvas workflow detailed in [html_decks.md](html_decks.md)) whenever the user explicitly requests an HTML presentation, a deck that incorporates rich motion, exact text copy in the browser, code blocks, live data feeds, clickable hyperlinks, multi-step progressive builds, or when they want to avoid full-slide image generation entirely. Keep in mind that your rendering mode and your asset policy are completely separate choices: an HTML deck typically takes advantage of generated illustration plates, so when a user asks for "no image generation", what you actually want is `html` configured with `assets: none`. Crucially, you must never silently downgrade image → html simply because image generation encounters an error.
+
+Switch to **pptx** mode ([pptx_decks.md](pptx_decks.md)) when the deliverable is a file that a co-author will keep editing in PowerPoint or Google Slides. In this mode every word is a native text box and pictures are separate image plates, so the text stays editable after import. Build the PPTX directly from a JSON slide spec (`init --mode pptx` scaffolds one); do not build an HTML deck first and convert it, because CSS layout and SVG do not survive the conversion as editable objects. Requests that mention PPTX, PowerPoint, Google Slides or an editable deck select this mode.
 
 ## Acceptance criteria
 
@@ -58,6 +62,13 @@ A deck is considered **done** only when all of the following requirements hold. 
 - All slide copy must adhere to the process outlined in [copy_workflow.md](copy_workflow.md): drafted by a dedicated writing model whenever one is available (or by the builder working against those exact same contracts), with every single drift correction tracked in `validation.md`.
 - Illustration plates must follow [generated_assets.md](generated_assets.md): locked into a single cohesive aesthetic, completely free of text, and rendered as crisp ink over a transparent background.
 - Automated runs of `tools/shoot.py` must report zero console errors, zero failed requests, zero requests attempting to leave localhost, and zero unfilled slots; furthermore, at least one [critic round](critic_review.md) must be completed and stored under `verification/critic/`.
+
+**PPTX mode**
+
+- Every slide in the spec has a title and speaker notes, and every word on a slide is a native text box, bubble or title; nothing readable is baked into an image plate.
+- `build-pptx` finishes with no overflow warnings left unexplained, and you have looked at the contact sheet from `--render`.
+- If the deck goes to Google Slides, check the imported result (export it back to PDF or thumbnails) before handoff, since LibreOffice and Google Slides render the same file differently.
+- Copy follows [copy_workflow.md](copy_workflow.md) and notes follow [speaker_notes.md](speaker_notes.md), as in the other modes.
 
 **Cross-mode awareness**
 
@@ -93,6 +104,13 @@ bash scripts/presentation-skill export-pdf deck_work --check-only    # load, ste
 A deck that has `js/engine.js` and a `window.DECK` slide table is exported through headless Chromium (`--mode html` forces this path, `--mode image` the other one). Each slide is printed at its last step unless its `js/deck.js` entry sets `print: <step>`. Transitions are switched off, so every page shows the settled state. Text stays vector and selectable, and DOM links stay clickable. Blurred shadows, repeating gradients and SVG patterns are redrawn by the browser before each page is printed, so they look the same in Preview as in the deck. Large images are capped at 2× their displayed size and re-encoded as JPEG (`--image-scale`, `--image-quality`). The details, including a dedicated handout layout for slides whose final state hides information, are in [html_decks.md](html_decks.md). This path requires the `[pdf-html]` extra and a Chromium build (`python -m playwright install chromium`).
 
 Once initialization wraps up, read `deck_work/README.md`. You will find the active mode files sitting right at the deck root, while the alternate mode lives under `examples/`.
+
+**Editable PPTX** (spec format and workflow in [pptx_decks.md](pptx_decks.md); needs the `[pptx]` extra)
+
+```bash
+bash scripts/presentation-skill "Topic" --mode pptx --output deck_work
+bash scripts/presentation-skill build-pptx deck_work/slides.json --render deck_work/verification/render
+```
 
 **HTML (canvas) loop** (inside an html scaffold):
 
