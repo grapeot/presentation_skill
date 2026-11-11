@@ -15,14 +15,14 @@ else:
 
 # Model-aware defaults
 DEFAULT_SIZES = {"gemini": "1K", "gpt": "4K"}
-DEFAULT_QUALITY = "auto"  # gpt-image-2.5 only; Gemini ignores it
+DEFAULT_QUALITY = "auto"  # GPT Image only; Gemini ignores it
 DEFAULT_PARALLELISM = {"gemini": 4, "gpt": 8}
 
-# GPT Image 2.5 ships as two variants at the same price. Speed-first is the
+# GPT Image 2.6 ships as two variants at the same price. Speed-first is the
 # default for fast 1K drafts; precision-first is the default for final 2K/4K.
 OPENAI_VARIANT_MODELS = {
-    "flare": "gpt-image-2.5-flare",
-    "sunburst": "gpt-image-2.5-sunburst",
+    "flare": "gpt-image-2.6-flare",
+    "sunburst": "gpt-image-2.6-sunburst",
 }
 DEFAULT_VARIANT_BY_SIZE = {"1K": "flare", "2K": "sunburst", "4K": "sunburst"}
 
@@ -123,7 +123,7 @@ def build_prompt(slide, guideline, project_root):
 
 def generate_slide(slide, guideline, output_dir, project_root, *,
                    model: str, image_size: str, quality: str,
-                   openai_model_id: str = "gpt-image-2.5-sunburst",
+                   openai_model_id: str = "gpt-image-2.6-sunburst",
                    filename_suffix: str = ""):
     print(f"Starting generation for Slide {slide['number']} (model={model}, size={image_size}, quality={quality})...")
 
@@ -184,7 +184,7 @@ def _resolve_defaults(args):
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Generate slides")
     parser.add_argument("--enlarge", action="store_true",
-                        help="Enlarge existing slides to 4K (Gemini only — gpt-image-2.5 "
+                        help="Enlarge existing slides to 4K (Gemini only — gpt-image-2.6 "
                              "already renders 4K natively)")
     parser.add_argument("--slides", type=int, nargs="+",
                         help="Specific slide numbers to process (e.g., --slides 8 11)")
@@ -194,12 +194,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--size", choices=["1K", "2K", "4K"],
                         help="Image size (default: 4K for gpt, 1K for gemini)")
     parser.add_argument("--quality",
-                        choices=["low", "medium", "high", "xhigh", "max", "auto"],
-                        help="Quality tier for gpt-image-2.5 only (default: auto). "
+                        choices=["low", "medium", "high", "auto"],
+                        help="Quality tier for gpt-image-2.6 only (default: auto). "
                              "Ignored for gemini.")
     parser.add_argument("--variant", choices=["auto", "flare", "sunburst"],
                         default="auto",
-                        help="GPT Image 2.5 variant: flare = speed-first, "
+                        help="GPT Image 2.6 variant: flare = speed-first, "
                              "sunburst = precision-first. Default auto follows "
                              "size (1K -> flare, 2K/4K -> sunburst).")
     parser.add_argument("--filename-suffix", default="",
@@ -229,7 +229,7 @@ def main():
         if args.model != "gemini":
             print(
                 "--enlarge is only supported with --model gemini; "
-                "gpt-image-2.5 generates the final resolution directly, no upscale needed.",
+                "gpt-image-2.6 generates the final resolution directly, no upscale needed.",
                 file=sys.stderr,
             )
             sys.exit(2)
@@ -305,7 +305,7 @@ def main():
             executor.submit(
                 generate_slide, slide, guideline, output_dir, project_root,
                 model=model, image_size=size, quality=quality,
-                openai_model_id=openai_model_id or "gpt-image-2.5-sunburst",
+                openai_model_id=openai_model_id or "gpt-image-2.6-sunburst",
                 filename_suffix=args.filename_suffix,
             )
             for slide in slides

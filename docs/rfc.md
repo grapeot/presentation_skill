@@ -108,3 +108,5 @@ The copied image-deck `tools/` template targeted `gpt-image-2`. OpenAI's current
 3. **Native multi-image input.** GPT Image 2.5 accepts multiple input images in one `images.edit` call, so the Pillow vertical-stacking workaround that existed only to satisfy a one-input limit is removed. `Asset` paths are passed straight through.
 
 The response shape is unchanged from `gpt-image-2` (same top-level keys, same `data[i]` keys), so downstream parsing needs no change. Verified live during the upgrade; see `docs/working.md`.
+
+On 2026-11-10 the template moved to GPT Image 2.6 (`gpt-image-2.6-flare` / `gpt-image-2.6-sunburst`) at the same per-token price. The variant rule and multi-image input carry over unchanged. 2.6 rejects quality `xhigh` and `max`, so `--quality` now accepts `low|medium|high|auto`.
