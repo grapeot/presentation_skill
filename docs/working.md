@@ -2,6 +2,11 @@
 
 ## Changelog
 
+### 2026-11-10
+
+- Upgraded the image-deck `tools/` template from GPT Image 2.5 to GPT Image 2.6 (`gpt-image-2.6-flare` / `gpt-image-2.6-sunburst`, released 2026-11-04, same per-token price, faster). Variant-by-size defaults are unchanged.
+- Narrowed `--quality` to `low|medium|high|auto`: the live API returns 400 for `xhigh`/`max` on 2.6. Custom 4K slide size 3840x2160 was verified live on `gpt-image-2.6-sunburst`.
+
 ### 2026-10-07
 
 - Expanded `skills/speaker_notes.md` with lessons from a full podium-voice revision of a teaching deck that ended with a course offer: keep the speaker's own contrasts and use spoken connectors (section 1); a new "Setup Before Payoff" section (introduce the frame before its parts, introduce terms once, answer the obvious question in the next breath, transitions need a reason, no contradictory handoffs); "Audience Vocabulary" (pair jargon with plain words, disambiguate everyday words, drop plumbing, don't speak the planning metaphor, frame options as options); "Voice, Attribution, and Fidelity" (we vs I, cover co-presenters' parts, verify anecdotes against the primary record); "Time Budget and Compression" (about 135 wpm with a 10-15% reserve, cut points not connectives, re-read after compression, keep click markers in sync); and "Closing Offer" (bridge from the talk, one story in depth, proof on screen, real deadlines, links with the offer pre-applied). Added five Known Traps rows and a fifth Rewrite QA pass.

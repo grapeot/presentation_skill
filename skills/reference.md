@@ -20,9 +20,9 @@ Produce before rendering:
 
 Put generated files under `generated_slides/` or `output/`. Do not copy API keys into prompts or docs.
 
-### Multiple reference assets with GPT Image 2.5
+### Multiple reference assets with GPT Image 2.6
 
-GPT Image 2.5 accepts **multiple** input images in one call, so slides can reference several exact pixels — a navbar style sheet, a logo, and a QR code on the same closing slide — without preprocessing.
+GPT Image 2.6 accepts **multiple** input images in one call, so slides can reference several exact pixels — a navbar style sheet, a logo, and a QR code on the same closing slide — without preprocessing.
 
 **Generator behavior:** When an outline slide lists multiple paths under `Asset`, `tools/generate_slides.py` passes them all to `client.images.edit` in list order. No stacking or compositing is performed.
 
@@ -34,9 +34,9 @@ GPT Image 2.5 accepts **multiple** input images in one call, so slides can refer
 
 **Model variants and quality:**
 
-- `gpt-image-2.5-flare` — speed-first; default at 1K.
-- `gpt-image-2.5-sunburst` — precision-first; default at 2K/4K.
-- Override the variant with `--variant flare|sunburst` (`auto` follows size). Quality defaults to `auto`; pin it with `--quality low|medium|high|xhigh|max|auto`. The 2.5 quality scale is finer than GPT Image 2's: 2.5 `high` costs roughly a quarter of GPT Image 2 `high`, and 2.5 `max` matches the old `high` spend.
+- `gpt-image-2.6-flare` — speed-first; default at 1K.
+- `gpt-image-2.6-sunburst` — precision-first; default at 2K/4K.
+- Override the variant with `--variant flare|sunburst` (`auto` follows size). Quality defaults to `auto`; pin it with `--quality low|medium|high|auto`. GPT Image 2.6 rejects `xhigh` and `max` (2.5-only tiers).
 
 **Draft vs final renders:** Use `--output-dir generated_slides_4k` (or similar) for final-quality batches; point `index.html` `data-background` at the chosen directory.
 

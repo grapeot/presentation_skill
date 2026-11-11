@@ -36,8 +36,8 @@ Agents lack a single, opinionated contract for presentation decks. Legacy repos 
 
 ### Image backend (OpenAI)
 
-- The copied image-deck `tools/` template targets the GPT Image 2.5 family: `gpt-image-2.5-flare` (speed-first) and `gpt-image-2.5-sunburst` (precision-first), both at the same price.
-- Variant defaults to size (`1K → flare`, `2K/4K → sunburst`) with a `--variant auto|flare|sunburst` override; quality defaults to `auto` and accepts `low|medium|high|xhigh|max|auto`.
+- The copied image-deck `tools/` template targets the GPT Image 2.6 family: `gpt-image-2.6-flare` (speed-first) and `gpt-image-2.6-sunburst` (precision-first), both at the same price.
+- Variant defaults to size (`1K → flare`, `2K/4K → sunburst`) with a `--variant auto|flare|sunburst` override; quality defaults to `auto` and accepts `low|medium|high|auto` (2.6 rejects `xhigh`/`max`).
 - Multiple `Asset` images are passed to a single `images.edit` call; the template does not stack or composite references.
 
 ### PDF export (image decks)

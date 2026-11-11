@@ -47,15 +47,15 @@ def generator():
 
 
 def test_variant_defaults_follow_size(generator):
-    assert generator._resolve_variant("gpt", "1K", "auto") == "gpt-image-2.5-flare"
-    assert generator._resolve_variant("gpt", "2K", "auto") == "gpt-image-2.5-sunburst"
-    assert generator._resolve_variant("gpt", "4K", "auto") == "gpt-image-2.5-sunburst"
+    assert generator._resolve_variant("gpt", "1K", "auto") == "gpt-image-2.6-flare"
+    assert generator._resolve_variant("gpt", "2K", "auto") == "gpt-image-2.6-sunburst"
+    assert generator._resolve_variant("gpt", "4K", "auto") == "gpt-image-2.6-sunburst"
     assert generator._resolve_variant("gemini", "1K", "auto") is None
 
 
 def test_variant_override_wins_over_size(generator):
-    assert generator._resolve_variant("gpt", "1K", "sunburst") == "gpt-image-2.5-sunburst"
-    assert generator._resolve_variant("gpt", "4K", "flare") == "gpt-image-2.5-flare"
+    assert generator._resolve_variant("gpt", "1K", "sunburst") == "gpt-image-2.6-sunburst"
+    assert generator._resolve_variant("gpt", "4K", "flare") == "gpt-image-2.6-flare"
 
 
 def test_parser_defaults(generator):
@@ -66,11 +66,12 @@ def test_parser_defaults(generator):
     assert args.size is None
 
 
-def test_parser_accepts_all_2_5_quality_tiers(generator):
-    for tier in ("low", "medium", "high", "xhigh", "max", "auto"):
+def test_parser_accepts_2_6_quality_tiers(generator):
+    for tier in ("low", "medium", "high", "auto"):
         assert generator.build_parser().parse_args(["--quality", tier]).quality == tier
-    with pytest.raises(SystemExit):
-        generator.build_parser().parse_args(["--quality", "ultra"])
+    for tier in ("xhigh", "max", "ultra"):
+        with pytest.raises(SystemExit):
+            generator.build_parser().parse_args(["--quality", tier])
 
 
 def test_default_quality_is_auto(generator):
@@ -82,7 +83,7 @@ def test_default_quality_is_auto(generator):
 def test_size_override_flows_into_variant(generator):
     args = generator.build_parser().parse_args(["--size", "1K"])
     _model, size, _quality, _workers = generator._resolve_defaults(args)
-    assert generator._resolve_variant("gpt", size, args.variant) == "gpt-image-2.5-flare"
+    assert generator._resolve_variant("gpt", size, args.variant) == "gpt-image-2.6-flare"
 
 
 def test_generate_slide_passes_all_assets_and_model_id(generator, tmp_path, monkeypatch):
@@ -107,10 +108,10 @@ def test_generate_slide_passes_all_assets_and_model_id(generator, tmp_path, monk
         model="gpt",
         image_size="1K",
         quality="auto",
-        openai_model_id="gpt-image-2.5-flare",
+        openai_model_id="gpt-image-2.6-flare",
     )
 
-    assert captured["model_id"] == "gpt-image-2.5-flare"
+    assert captured["model_id"] == "gpt-image-2.6-flare"
     assert captured["quality"] == "auto"
     assert captured["image_paths"] == [str(first), str(second)]
     assert not list(tmp_path.glob("stacked_assets_*"))

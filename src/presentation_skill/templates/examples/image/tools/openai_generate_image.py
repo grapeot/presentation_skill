@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-"""Local wrapper around the OpenAI GPT Image 2.5 models with the same
+"""Local wrapper around the OpenAI GPT Image 2.6 models with the same
 signature shape as `gemini_generate_image.generate`, so `generate_slides.py`
 can dispatch to either backend by name.
 
-Two GPT Image 2.5 variants, same price:
-- `gpt-image-2.5-flare` — speed-first, for fast drafts (default at 1K).
-- `gpt-image-2.5-sunburst` — precision-first, for final renders (default at 2K/4K).
+Two GPT Image 2.6 variants, same price:
+- `gpt-image-2.6-flare` — speed-first, for fast drafts (default at 1K).
+- `gpt-image-2.6-sunburst` — precision-first, for final renders (default at 2K/4K).
 
-Quality tiers: low / medium / high / xhigh / max / auto. Defaults to "auto"
+Quality tiers: low / medium / high / auto (2.6 rejects xhigh/max, which only
+2.5 accepts). Defaults to "auto"
 so the model picks the right level per prompt; pass an explicit tier to pin
-cost or quality. The 2.5 scale is finer than GPT Image 2's: 2.5 `high` costs
-roughly a quarter of GPT Image 2 `high`, and 2.5 `max` matches the old `high`.
+cost or quality.
 
 Sizes (1K / 2K / 4K) map to concrete pixel dimensions identical to the
 workspace-level `tools/generate_image.py` mapping. Only 16:9 is needed
@@ -94,9 +94,9 @@ def generate(
     image_size: str = "4K",
     aspect_ratio: Optional[str] = None,
     quality: str = "auto",
-    model_id: str = "gpt-image-2.5-sunburst",
+    model_id: str = "gpt-image-2.6-sunburst",
 ) -> Optional[Path]:
-    """Generate one image via a GPT Image 2.5 model. Returns the first saved
+    """Generate one image via a GPT Image 2.6 model. Returns the first saved
     path or None. Accepts any number of reference images: the API supports
     multiple image inputs natively, so no stacking is needed."""
     api_key = os.environ.get("OPENAI_API_KEY")
